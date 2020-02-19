@@ -2,19 +2,24 @@
 #include <stdlib.h>
 #include <queue>
 
-#define N 10
-#define M 100
+#define N 10    // number of nodes
+#define E 100   // number of edges
+#define L 0     // number of loops
 
 int main(int argc, char *argv[]){
     // test spaning tree
     int i, j, a, b, tmp;
     int maxDegree;
     int adj[N][N], adj2[N][N];      // adjacency matrix (undirected) (weight is radius)
-    int edge[M][3];                 // node1, node2, weight
+    int edge[E][3];                 // node1, node2, weight
     int root, parent[N], depth[N];  // spanning tree info
     bool visit[N];                  // for BFS
     std::queue<int> buffer;         // BFS buffer
-    int loop[M][N][N];              // TODO: change to more efficient data structure later
+    int loop[E][N][N];              // TODO: change to more efficient data structure later
+    int edgeflow[E][2];             // assume edge flow from node a to node b, where a < b
+    int A[E][N];                    // edgeflow-node incidence matrix
+    int M[L][E];                    // loop-edgeflow incidence matrix
+    // adj to store edge id for faster searching
 
     // init arrays
     // construct and copy adj
@@ -45,6 +50,7 @@ int main(int argc, char *argv[]){
     for(tmp = 0, i = 0; i < N; ++i)
         for(j = i + 1; j < N; ++j)
             if(adj2[i][j] > 0){
+                loop[tmp][i][j] = -1, loop[tmp][j][i] = 1;
                 // form the loop, watch out direciton of edge
                 for(a = i, b = j; a != b; )
                     if(depth[a] > depth[b])
