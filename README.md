@@ -27,5 +27,5 @@ After validating sequential version, write a CUDA version.
 
 ### Notes
 
-1. If using flowrate as boundary condition, both input and output flow should be provide (one output will be depedent, so one node equation contain one output should be removed) (pressure and radius are decided implicitly) In the end you will get N-1 node eq & E-(N-1) loop eq (1 is sum in = sum out).
-2. If using pressure as boundary condition, every additional inputs and outputs should add one edge, which means we need (inputs+outputs) indepedent loop equations (just select one input and go through the path contain other inputs and outpus.). In the end you will get (N-N0) node eq (sum in and sum out is include in source) + L loop eq + (N0-1) source loop eq. (For one source connect to two nodes, it can be separate into two clone nodes).
+1. If using flowrate as boundary condition, both input and output flow should be provide (one output will be depedent, so one node equation contain one output should be removed) (pressure and radius are decided implicitly) In the end you will get N-1 node eq & E-(N-1) loop eq (1 is sum in = sum out). (no node at the end of source)
+2. If using pressure as boundary condition, every additional inputs and outputs should add one edge, which means we need (N0-1=inputs+outputs-1) indepedent loop equations (just select one input and go through the path contain other inputs and outpus.). In the end you will get (N-N0) node eq (no node eq at source) + L loop eq + (N0-1) source loop eq. (E = (N-N0) + L + (N0-1))
