@@ -105,8 +105,8 @@ int main(int argc, char *argv[]){
     visitedEdges = (bool*) malloc(nE * sizeof(bool));
 
     // construct adjacency matrix
-    for(i = 0; i < nE; ++i)
-        for(j = i; j < nE; ++j)
+    for(i = 0; i < nN; ++i)
+        for(j = i; j < nN; ++j)
             adj[RC2I(i, j, nN)].state = adj[RC2I(j, i, nN)].state = 0;
     for(i = 0; i < nE; ++i){
         ii = RC2I(edgeList[i].a, edgeList[i].b, nN);
@@ -208,7 +208,8 @@ int main(int argc, char *argv[]){
                     incLoops[RC2I(tmp, k, nE)] = adj[kk].state == 1? edgeList[k].r : -edgeList[k].r;
                     jj = parent[jj];
                 }
-            conLoops[tmp] = srcList[i].x - srcList[0].x; // dir is 0->jj0
+            // conLoops[tmp] = srcList[i].x - srcList[0].x;
+            conLoops[tmp] = srcList[0].x - srcList[i].x; // dir is 0->jj0
             ++tmp;
         }
     }
@@ -241,10 +242,10 @@ int main(int argc, char *argv[]){
     // Newton's method
 
     // release memory
-    free(incNodes); putchar('0'); // why these might get error?
-    free(incLoops); putchar('1');
-    free(conLoops); putchar('2');
-    free(conNodes); putchar('3');
+    free(incNodes);
+    free(incLoops);
+    free(conLoops);
+    free(conNodes);
 
     // print result (flowrate on every pipe)
 
