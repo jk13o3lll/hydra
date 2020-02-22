@@ -44,6 +44,16 @@ bool loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
     return true;
 }
 
+// bool toEquivalentNetwork(){
+
+//     return true;
+// }
+
+// bool fromEquivalentNetwork(){
+
+//     return true;
+// }
+
 bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType, const double n, const int nN, const int nN0, const int nE, const  int nL, const int nNeq, const int nLeq, double *&incNode, double *&conNode, double *&incLoop, double *&conLoop){
     Adjacency *adj;
     // for node eq
@@ -199,6 +209,26 @@ bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType,
     return true;
 }
 
+bool bicg(const double *A, double *x, const double *b, const int n){ // x should allocate outside, A should be nxn
+
+    return true;
+}
+
+bool newton(const double *incNode, const double *conNode, const double *incLoop, const double *conLoop, const double n, double *&x, const int nNeq, const int nLeq, const int nE){
+
+    // set x to initial x (rand or zero)
+    // set dx = inf
+
+    // for(nIter = 0; norm(dx) > tol && nIter < nMaxIter; ++nIter){
+    //     // compute F
+    //     // compute J
+    //     // bicg(F, dx, J)
+    //     // x += dx
+    // }
+
+    // return nIter < nMaxIter? true : false;
+}
+
 int main(int argc, char *argv[]){
     Edge *edgeList;
     Source *srcList;
@@ -206,6 +236,7 @@ int main(int argc, char *argv[]){
     double n;
     int nN, nN0, nE, nL, nNeq, nLeq;
     double *incNode, *conNode, *incLoop, *conLoop; // constants at the same side with unknowns
+    double *x;
     bool ret;
     int i, j;
 
@@ -222,6 +253,9 @@ int main(int argc, char *argv[]){
     printf("srcList =\n");
     for(i = 0; i < nN0; ++i)
         printf("%d %lf\n", srcList[i].node, srcList[i].bc);
+
+    // transform into equivalent network
+    // toEquivalentNetwork();
 
     // get equations
     ret = getEquations(edgeList, srcList, bcType, n, nN, nN0, nE, nL, nNeq, nLeq, incNode, conNode, incLoop, conLoop);
@@ -244,13 +278,20 @@ int main(int argc, char *argv[]){
     }
 
     // Newton's method
-
-
-    // release memeory
+    // ret = newton();
     free(incNode);
     free(conNode);
     free(incLoop);
     free(conLoop);
+    if(!ret){ puts("Exceed maximum iteration"); return 1; }
+
+    // tranform from equivalent network to original network
+    // fromEquivalentNetwork();
+
+    // save result
+    // fp = fopen()
+    // for  fprintf(fp, x)
+    free(x);
 
     return 0;
 }
