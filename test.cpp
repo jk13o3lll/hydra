@@ -1,7 +1,7 @@
-#define NETWORK1
-// #define NETWORK2
-// #define NETWORK3
-// #define NETWORK4
+// g++ -D NETWORK1 test.cpp -o test.exe
+#if !defined(NETWORK1) && !defined(NETWORK2) && !defined(NETWORK3) && !defined(NETWORK4)
+    #define NETWORK1 // network 1 as default
+#endif
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -173,8 +173,6 @@ const SourceNode srcList[] = {
 const int nE = sizeof(edgeList) / sizeof(Edge); // number of edges
 const int nN0 = sizeof(srcList) / sizeof(SourceNode);
 int nN = 0, nL = 0; // number of nodes (include sources), number of loops, obtained later
-
-
 
 // compute residual
 void computeR(const double *A, const double *x, const double *b, double *R, const int nNeq, const int nLeq){ // R = Ax - b
