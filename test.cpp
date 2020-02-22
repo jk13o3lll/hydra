@@ -1,15 +1,9 @@
 // g++ -D NETWORK1 test.cpp -o test.exe
-#if !defined(NETWORK1) && !defined(NETWORK2) && !defined(NETWORK3) && !defined(NETWORK4)
-    #define NETWORK1 // network 1 as default
-#endif
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <queue>
-
-// indexing: r = row, c = column, cols = number of columns
-// 2D index to 1D
-#define RC2I(r,c,cols) ((r)*(cols)+(c))
+#include "data.h"
 
 // Notes 1:
 // Pressure loss by Darcy-Weisbach equation (dP = r * Q ^ n), and form loop equations
@@ -25,180 +19,57 @@
 // L: number of independent loop (not conjugated to each other)
 // N: number of nodes (including source nodes, number of source nodes is N0)
 
-// basic data type
-struct Edge {
-    int a, b;
-    double r;   // r is constant related to pipe diameter, pipe length, and friction factors
-};
-struct SourceNode {
-    int id;
-    double x;   // flow or pressure
-};
-struct Adjacency {
-    int id;     // id of flow on that edge
-    int state;  // -1 for direction opposite to defined flow direction,
-                // 0 for no connnection,
-                // +1 for direction indentical to defined flow direction.
-};
+// 2D index to 1D: r = row, c = column, cols = number of columns
+#define RC2I(r,c,cols) ((r)*(cols)+(c))
 
+struct Adjacency {  // id of flow on that edge
+    int id, state;  // -1 for direction opposite to defined flow direction,
+};                  // 0 for no connnection, +1 for direction indentical to defined flow direction.
 
-#ifdef NETWORK1
-// network 1 (boundary condition by flowrate)
-const int bcType = 0; // boundary condition is flowrate to node
-const double n = 2.;    // constant in pressure loss eqn, 1.5 < n < 2.0
-const Edge edgeList[] = { 
-    {0, 1, 5.}, // a, b, r (from a to b, with pipe radius = r)
-    {0, 2, 1.}, // all node should be contain in single graph
-    {1, 2, 1.}, // (should not have multple separate graphs)
-    {1, 3, 1.}, // id of node should start from zero and continuous
-    {2, 3, 4.}  // use original direction as assumed direction to
-};              // generate adjacency matrix (adj store +1 or -1) and incidence matrix
-const SourceNode srcList[] = {  // direction for node eqation is 
-    {0, 10.},                   // flow into node is positive
-    {3, -10.}                   // flow out from node is negative
-};                              // p.s. one node should be dependent due to mass conservation
-#endif // NETWORK1
-
-#ifdef NETWORK2
-// network 2 (boundary condition by flowrate)
-const int bcType = 0; // boundary condition is flowrate to node
-const double n = 2.;
-const Edge edgeList[] = { 
-    {0, 1, 1.},
-    {1, 6, 5.},
-    {1, 2, 1.},
-    {0, 3, 5.},
-    {3, 4, 3.},
-    {2, 4, 1.},
-    {2, 5, 1.},
-    {5, 6, 3.},
-    {3, 8, 3.},
-    {4, 7, 1.},
-    {5, 7, 1.},
-    {7, 8, 2.},
-    {8, 9, 3.},
-    {6, 9, 3.},
-};
-const SourceNode srcList[] = {
-    {0, 10.},
-    {9, -10.}
-};
-#endif // NETWORK2
-
-#ifdef NETWORK3
-// network 3 (boundary condition by pressure)
-const int bcType = 1; // boundary condition is pressure at node
-const double n = 2.;
-const Edge edgeList[] = {
-    {0, 1, 1.},
-    {1, 6, 5.},
-    {1, 2, 1.},
-    {0, 3, 5.},
-    {3, 4, 3.},
-    {2, 4, 1.},
-    {2, 5, 1.},
-    {5, 6, 3.},
-    {3, 14, 1.},
-    {4, 7, 1.},
-    {5, 7, 1.},
-    {7, 8, 2.},
-    {8, 9, 3.},
-    {6, 9, 3.},
-    {8, 10, 1.},
-    {14, 11, 2.},
-    {13, 16, 5.},
-    {14, 15, 5.},
-    {10, 11, 3.},
-    {11, 12, 2.},
-    {9, 16, 1.},
-    {12, 15, 2.},
-    {10, 13, 2.},
-    {13, 12, 1.},
-    {16, 17, 1.},
-    {15, 17, 2.},
-    {18, 0, 1.}, // edge connect to source
-    {9, 19, 1.}, // edge connect to source
-    {17, 20, 1.} // edge connect to source
-};
-const SourceNode srcList[] = {  // direction for loop equation is
-    {18, 10.},                  // same as loop direction is positive
-    {19, 0.},                   // opposite to loop direction is negative
-    {20, 0.}    // source node should be exclude when construct node eq
-};
-#endif // NETWORK3
-
-#ifdef NETWORK4
-// network 4 (boundary condition by pressure)
-const int bcType = 1; // boundary condition is pressure at node
-const double n = 2.;
-const Edge edgeList[] = {
-    {0, 1, 1.},
-    {1, 6, 5.},
-    {1, 2, 1.},
-    {0, 3, 5.},
-    {3, 4, 3.},
-    {2, 4, 1.},
-    {2, 5, 1.},
-    {5, 6, 3.},
-    {3, 14, 1.},
-    {4, 7, 1.},
-    {5, 7, 1.},
-    {7, 8, 2.},
-    {8, 9, 3.},
-    {6, 9, 3.},
-    {8, 10, 1.},
-    {14, 11, 2.},
-    {13, 16, 5.},
-    {14, 15, 5.},
-    {10, 11, 3.},
-    {11, 12, 2.},
-    {9, 16, 1.},
-    {12, 15, 2.},
-    {10, 13, 2.},
-    {13, 12, 1.},
-    {16, 17, 1.},
-    {15, 17, 2.},
-    {18, 0, 1.}, // edge connect to source
-    {9, 19, 1.}, // edge connect to source
-    {17, 20, 1.} // edge connect to source
-};
-const SourceNode srcList[] = {
-    {18, 100.},
-    {19, 0.},
-    {20, 0.}
-};
-#endif // NETWORK4
-
-// get basic dimensions
-const int nE = sizeof(edgeList) / sizeof(Edge); // number of edges
-const int nN0 = sizeof(srcList) / sizeof(SourceNode);
-int nN = 0, nL = 0; // number of nodes (include sources), number of loops, obtained later
-
-// compute residual
-void computeR(const double *A, const double *x, const double *b, double *R, const int nNeq, const int nLeq){ // R = Ax - b
-    return;
+// compute residual, R = A(x) - b
+void computeR(const double *incNodes, const double *conNodes,   // node eqs
+              const double *incLoops, const double *conLoops,   // loop eqs
+              const double *x,                                  // vector of flows
+              const int nNeq, const int nLeq,                   // dims
+              double *R){                                       // residual (output)
+    // ...
 }
 
-// compute jacobian
-void computeJ(const double *A, const double *x, const double *b, double *J, const int nNeq, const int nLeq){ // Jacobian of R
-    return;
+// compute jacobian of R
+void computeJ(const double *incNodes, const double *conNodes,   // node eqs
+              const double *incLoops, const double *conLoops,   // loop eqs
+              const double *x,                                  // vector of flows
+              const int nNeq, const int nLeq,                   // dims
+              double *J){                                       // jacobian (output)
+    // ...
 }
 
 // Calculate dx by BiCG or BiCGSTAB instead of calculating inverve Jacobian
 void bicg(const double *A, double *x, const double *b, const int n){ // A should be square (can be nonsymmetric)
-    return;
+    // ...
 }
 
 // main function
 int main(int argc, char *argv[]){
-    int i, j;
-    Adjacency *adj;     // adjacency matrix for pipes, value is +1 or -1
-                        // (+1 for originally defined direction, -1 for opposite)
-    int nNeq, nLeq;     // number node eqns, number loop eqns
-    double *incNodes;   // incidence matrix for node equations
-    double *incLoops;   // incidence matrix for loop equations
+    const int nE = sizeof(edgeList) / sizeof(Edge);         // number of edges
+    const int nN0 = sizeof(srcList) / sizeof(SourceNode);   // number of source node
+    int nN, nL, nNeq, nLeq;                                 // number of nodes, loops, node eqns, loop eqns
+    Adjacency *adj;                 // adjacency matrix for pipes
+    double *incNodes, *conNodes;    // incidence matrix for node eqs, constant at the same side with unknowns
+    double *incLoops, *conLoops;    // incidence matrix for loop eqs, constant at the same side with unknowns
+    double *inlets;                 // inlet flow on every nodes
+    int root, *parent, *depth;      // spanning tree info
+    bool *hasNeq;                   // mark nodes to construct node eq
+    bool *visited;                  // record visited nodes for BFS
+    bool *visitedEdges;             // record visited edges while BFS
+    std::queue<int> buffer;         // BFS buffer
+    int i, j, k, ii, jj, kk, tmp;
 
-    // ======================================================================
+    // TODO: add function to modify network (replace some pipe with equivalent pipe)
+    // 1. parallel pipes (> 2 pipe between 2 nodes)
+    // 2. serial pipes (node deg = 2)
+    // 3. multiple source flow on one node
+    // analyse modified network, and use result of modified network to derive result of original network
 
     // get dimensions
     for(i = 0; i < nE; ++i){
@@ -207,9 +78,6 @@ int main(int argc, char *argv[]){
     }
     ++nN;
     nL = nE - nN + 1;
-
-    // allocate memory
-    adj = (Adjacency*) malloc(nN * nN * sizeof(Adjacency));
     if(bcType == 0){
         nNeq = nN - 1;          // ignore one dependent source
         nLeq = nE - nNeq;
@@ -218,87 +86,164 @@ int main(int argc, char *argv[]){
         nNeq = nN - nN0;        // ignore all source nodes
         nLeq = nL + nN0 - 1;    // include loops for source nodes
     }
+    printf("nE = %d, nN = %d, nN0 = %d, nL = %d\n", nE, nN, nN0, nL);
+    printf("nNeq = %d, nLeq = %d\n", nNeq, nLeq);
+
+    // allocate memory
+    adj = (Adjacency*) malloc(nN * nN * sizeof(Adjacency));
     incNodes = (double*) malloc(nNeq * nE * sizeof(double));
+    conNodes = (double*) malloc(nNeq * sizeof(double));
     incLoops = (double*) malloc(nLeq * nE * sizeof(double));
+    conLoops = (double*) malloc(nLeq * sizeof(double));
+    inlets = (double*) malloc(nN * sizeof(double));
+    parent = (int*) malloc(nN * sizeof(int));
+    depth = (int*) malloc(nN * sizeof(int));
+    visited = (bool*) malloc(nN * sizeof(bool));
+    visitedEdges = (bool*) malloc(nE * sizeof(bool));
 
-    // --- test ---
-    printf("nE = %d, nN = %d, nN0 = %d, nL = %d\n", nE, nN, nN0, nL); // dimensions
-    printf("nNeq = %d, nLeq = %d\n", nNeq, nLeq); // num of eqs
     // construct adjacency matrix
+    for(i = 0; i < nE; ++i)
+        for(j = i; j < nE; ++j)
+            adj[RC2I(i, j, nN)].state = adj[RC2I(j, i, nN)].state = 0;
+    for(i = 0; i < nE; ++i){
+        ii = RC2I(edgeList[i].a, edgeList[i].b, nN);
+        jj = RC2I(edgeList[i].b, edgeList[i].a, nN);
+        adj[jj].id = (adj[ii].id = i);
+        adj[jj].state = -(adj[ii].state = 1);
+    }
 
-    // construct incidence matrix (node equations)
+    // // construct incidence matrix (node equations)
+    // for(i = 0; i < nN; ++i) hasNeq[i] = true, inlets[i] = 0.;
+    // for(i = 0; i < nN0; ++i) inlets[srcList[i].id] = srcList[i].x;
+    // if(bcType != 0){ // bc is presure
+    //     for(i = 0; i < nN0; ++i) hasNeq[srcList[i].id] = false; // exclude all source nodes
+    //     for(tmp = 0, i = 0; i < nN; ++i)
+    //         if(hasNeq[i]){
+    //             for(j = 0; j < nN; ++j){
+    //                 ii = RC2I(i, j, nN);
+    //                 if(adj[ii].state != 0)
+    //                     incNodes[RC2I(tmp, adj[ii].id, nE)] = i == edgeList[adj[ii].id].b? 1. : -1.; // inlet as positive
+    //             }
+    //             conNodes[tmp] = 0.;
+    //             ++tmp;
+    //         }
+    // }
+    // else{   // bcType == 0, bc is flowrate
+    //     hasNeq[srcList[nN0 - 1].id] = false; // only remove one
+    //     for(tmp = 0, i = 0; i < nN; ++i)
+    //         if(hasNeq[i]){
+    //             for(j = 0; j < nN; ++j){
+    //                 ii = RC2I(i, j, nN);
+    //                 if(adj[ii].state != 0)
+    //                     incNodes[RC2I(tmp, adj[ii].id, nE)] = i == edgeList[adj[ii].id].b? 1. : -1.; // inlet as positive
+    //             }
+    //             conNodes[tmp] = inlets[i];
+    //             ++tmp;
+    //         }
+    // }
 
     // construct incidence matrix (loop equations)
+    // find node with max degree as root
+    ii = -1; // max degree
+    for(i = 0; i < nN; ++i){
+        for(tmp = 0, j = 0; j < nN; ++j)
+            if(adj[RC2I(i, j, nN)].state != 0)
+                ++tmp;
+        if(tmp > ii) ii = tmp, root = i;
+    }
+    // BFS and get spanning tree
+    for(i = 0; i < nN; ++i) visited[i] = false;
+    for(i = 0; i < nE; ++i) visitedEdges[i] = false;
+    parent[root] = -1, depth[root] = 0, visited[root] = true, buffer.push(root);
+    while(!buffer.empty()){
+        i = buffer.front(); buffer.pop();
+        for(j = 0; j < nN; ++j){
+            ii = RC2I(i, j, nN);
+            if(adj[ii].state != 0 && !visited[j]){
+                parent[j] = i, depth[j] = depth[i] + 1, visited[j] = true, buffer.push(i);
+                visitedEdges[adj[ii].id] = true;
+            }
+        }
+    }
+    // for(i = 0; i < nN; ++i)
+    //     printf("parent of %d: %d\n", i, parent[i]);
+
+    // form loop by connecting edges not in tree
+    for(tmp = 0, i = 0; i < nE; ++i)
+        if(!visitedEdges[i]){
+            for(ii = edgeList[i].a, jj = edgeList[i].b; ii != jj; )
+                if(depth[ii] > depth[jj]){
+                    kk = RC2I(parent[ii], ii, nN); // since using dir of a->b, dir is parent to child
+                    k = adj[kk].id;
+                    incLoops[RC2I(tmp, k, nE)] = adj[kk].state == 1? edgeList[k].r : -edgeList[k].r;
+                    ii = parent[ii];
+                }
+                else{   // depth[ii] <= depth[jj]
+                    kk = RC2I(jj, parent[jj], nN);
+                    k = adj[kk].id;
+                    incLoops[RC2I(tmp, k, nE)] = adj[kk].state == 1? edgeList[k].r : -edgeList[k].r;
+                    jj = parent[jj];
+                }
+            incLoops[RC2I(tmp, i, nE)] = edgeList[i].r;
+            conLoops[tmp] = 0.; // pressure loss == 0
+            ++tmp;
+        }
+    // form source loop by connecting src node
+    if(bcType == 1){
+        for(i = 1; i < nN0; ++i){
+            for(ii = srcList[0].id, jj = srcList[i].id; ii != jj; )
+                if(depth[ii] > depth[jj]){
+                    kk = RC2I(parent[ii], ii, nN); // since using dir of 0->jj0, dir is parent to child
+                    k = adj[kk].id;
+                    incLoops[RC2I(tmp, k, nE)] = adj[kk].state == 1? edgeList[k].r : -edgeList[k].r;
+                    ii = parent[ii];
+                }
+                else{   // depth[ii] <= depth[jj]
+                    kk = RC2I(jj, parent[jj], nN);
+                    k = adj[kk].id;
+                    incLoops[RC2I(tmp, k, nE)] = adj[kk].state == 1? edgeList[k].r : -edgeList[k].r;
+                    jj = parent[jj];
+                }
+            conLoops[tmp] = srcList[i].x - srcList[0].x; // dir is 0->jj0
+            ++tmp;
+        }
+    }
+
+    // print eqns
+    // for(i = 0; i < nNeq; ++i){
+    //     printf("Node eq %d: ", i);
+    //     for(j = 0; j < nE; ++j)
+    //         printf("%lf ", incNodes[RC2I(i, j, nE)]);
+    //     printf(", const = %lf\n", conNodes[i]);
+    // }
+    for(i = 0; i < nLeq; ++i){
+        printf("Loop eq %d: ", i);
+        for(j = 0; j < nE; ++j)
+            printf("%lf ", incLoops[RC2I(i, j, nE)]);
+        printf(", const = %lf\n", conLoops[i]);
+    }
 
     // release memory not necessary in the following
     free(adj);
-
-    // ======================================================================
+    free(inlets);
+    free(parent);
+    free(depth);
+    free(visited);
+    free(visitedEdges);
 
     // allocate memory required
 
     // Newton's method
 
-    // print result
+    // release memory
+    system("pause");
+    free(incNodes);
+    free(conNodes);
+    free(incLoops);
+    free(conLoops);
+    system("pause");
 
-    // release all memory
+    // print result (flowrate on every pipe)
 
     return 0;
 }
-
-// // test spaning tree
-// int i, j, a, b, tmp;
-// int maxDegree;
-// int adj[N][N], adj2[N][N];      // adjacency matrix (undirected) (weight is radius)
-// int edge[E][3];                 // node1, node2, weight
-// int root, parent[N], depth[N];  // spanning tree info
-// bool visit[N];                  // for BFS
-// std::queue<int> buffer;         // BFS buffer
-// int loop[E][N][N];              // TODO: change to more efficient data structure later
-// int edgeflow[E][2];             // assume edge flow from node a to node b, where a < b
-// int A[E][N];                    // edgeflow-node incidence matrix
-// int M[L][E];                    // loop-edgeflow incidence matrix
-// // adj to store edge id for faster searching
-
-// // init arrays
-// // construct and copy adj
-// // ...
-
-// // find node with max degree as root
-// maxDegree = -1;
-// for(i = 0; i < N; ++i){
-//     for(tmp = 0, j = 0; j < N; ++j)
-//         if(adj[i][j] > 0)
-//             ++tmp;
-//     if(tmp > maxDegree)
-//         maxDegree = tmp, root = i;
-// }
-
-// // bfs
-// parent[root] = -1, depth[root] = 0, visit[root] = true, buffer.push(i);
-// while(!buffer.empty()){
-//     tmp = buffer.front(); buffer.pop();
-//     for(i = 0; i < N; ++i)
-//         if(adj[tmp][i] > 0 && !visit[i]){
-//             parent[i] = tmp, depth[i] = depth[tmp] + 1, visit[i] = true, buffer.push(i);
-//             adj2[tmp][i] = adj2[i][tmp] = 0; // edges left in adj2 will be used later
-//         }
-// }
-
-// // find indepednet loops
-// for(tmp = 0, i = 0; i < N; ++i)
-//     for(j = i + 1; j < N; ++j)
-//         if(adj2[i][j] > 0){
-//             loop[tmp][i][j] = -1, loop[tmp][j][i] = 1;
-//             // form the loop, watch out direciton of edge
-//             for(a = i, b = j; a != b; )
-//                 if(depth[a] > depth[b])
-//                     loop[tmp][a][parent[a]] = 1, loop[tmp][parent[a]][a] = -1, a = parent[a];
-//                 else // depth[a] <= depth[b], loop dir is opposite to a
-//                     loop[tmp][b][parent[b]] = -1, loop[tmp][parent[b]][b] = 1, b = parent[b];
-//             ++tmp;
-//         }
-
-// // construct equation
-
-// // solve equations by Newton's (use bicg to compute inverse for gradient)
