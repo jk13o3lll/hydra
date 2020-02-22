@@ -53,10 +53,12 @@ void bicg(const double *A, double *x, const double *b, const int n){ // A should
 int main(int argc, char *argv[]){
     const int nE = sizeof(edgeList) / sizeof(Edge);         // number of edges
     const int nN0 = sizeof(srcList) / sizeof(SourceNode);   // number of source node
-    int nN, nL, nNeq, nLeq;                                 // number of nodes, loops, node eqns, loop eqns
+    int nN = 0, nL = 0, nNeq = 0, nLeq = 0;                 // number of nodes, loops, node eqns, loop eqns
     Adjacency *adj;                 // adjacency matrix for pipes
-    double *incNodes, *conNodes;    // incidence matrix for node eqs, constant at the same side with unknowns
-    double *incLoops, *conLoops;    // incidence matrix for loop eqs, constant at the same side with unknowns
+    double *incNodes;   // incidence matrix for node eqs, 
+    double *conNodes;   // constant at the same side with unknowns
+    double *incLoops;   // incidence matrix for loop eqs
+    double *conLoops;   // constant at the same side with unknowns
     double *inlets;                 // inlet flow on every nodes
     int root, *parent, *depth;      // spanning tree info
     bool *hasNeq;                   // mark nodes to construct node eq
@@ -98,6 +100,7 @@ int main(int argc, char *argv[]){
     inlets = (double*) malloc(nN * sizeof(double));
     parent = (int*) malloc(nN * sizeof(int));
     depth = (int*) malloc(nN * sizeof(int));
+    hasNeq = (bool*) malloc(nN * sizeof(bool));
     visited = (bool*) malloc(nN * sizeof(bool));
     visitedEdges = (bool*) malloc(nE * sizeof(bool));
 
@@ -112,35 +115,36 @@ int main(int argc, char *argv[]){
         adj[jj].state = -(adj[ii].state = 1);
     }
 
-    // // construct incidence matrix (node equations)
-    // for(i = 0; i < nN; ++i) hasNeq[i] = true, inlets[i] = 0.;
-    // for(i = 0; i < nN0; ++i) inlets[srcList[i].id] = srcList[i].x;
-    // if(bcType != 0){ // bc is presure
-    //     for(i = 0; i < nN0; ++i) hasNeq[srcList[i].id] = false; // exclude all source nodes
-    //     for(tmp = 0, i = 0; i < nN; ++i)
-    //         if(hasNeq[i]){
-    //             for(j = 0; j < nN; ++j){
-    //                 ii = RC2I(i, j, nN);
-    //                 if(adj[ii].state != 0)
-    //                     incNodes[RC2I(tmp, adj[ii].id, nE)] = i == edgeList[adj[ii].id].b? 1. : -1.; // inlet as positive
-    //             }
-    //             conNodes[tmp] = 0.;
-    //             ++tmp;
-    //         }
-    // }
-    // else{   // bcType == 0, bc is flowrate
-    //     hasNeq[srcList[nN0 - 1].id] = false; // only remove one
-    //     for(tmp = 0, i = 0; i < nN; ++i)
-    //         if(hasNeq[i]){
-    //             for(j = 0; j < nN; ++j){
-    //                 ii = RC2I(i, j, nN);
-    //                 if(adj[ii].state != 0)
-    //                     incNodes[RC2I(tmp, adj[ii].id, nE)] = i == edgeList[adj[ii].id].b? 1. : -1.; // inlet as positive
-    //             }
-    //             conNodes[tmp] = inlets[i];
-    //             ++tmp;
-    //         }
-    // }
+    // construct incidence matrix (node equations)
+    for(i = 0; i < nN; ++i) hasNeq[i] = true, inlets[i] = 0.;
+    for(i = 0; i < nN0; ++i) inlets[srcList[i].id] = srcList[i].x;
+
+    if(bcType != 0){ // bc is presure
+        for(i = 0; i < nN0; ++i) hasNeq[srcList[i].id] = false; // exclude all source nodes
+        for(tmp = 0, i = 0; i < nN; ++i)
+            if(hasNeq[i]){
+                for(j = 0; j < nN; ++j){
+                    ii = RC2I(i, j, nN);
+                    if(adj[ii].state != 0)
+                        incNodes[RC2I(tmp, adj[ii].id, nE)] = i == edgeList[adj[ii].id].b? 1. : -1.; // inlet as positive
+                }
+                conNodes[tmp] = 0.;
+                ++tmp;
+            }
+    }
+    else{   // bcType == 0, bc is flowrate
+        hasNeq[srcList[nN0 - 1].id] = false; // only remove one
+        for(tmp = 0, i = 0; i < nN; ++i)
+            if(hasNeq[i]){
+                for(j = 0; j < nN; ++j){
+                    ii = RC2I(i, j, nN);
+                    if(adj[ii].state != 0)
+                        incNodes[RC2I(tmp, adj[ii].id, nE)] = i == edgeList[adj[ii].id].b? 1. : -1.; // inlet as positive
+                }
+                conNodes[tmp] = inlets[i];
+                ++tmp;
+            }
+    }
 
     // construct incidence matrix (loop equations)
     // find node with max degree as root
@@ -210,16 +214,16 @@ int main(int argc, char *argv[]){
     }
 
     // print eqns
-    // for(i = 0; i < nNeq; ++i){
-    //     printf("Node eq %d: ", i);
-    //     for(j = 0; j < nE; ++j)
-    //         printf("%lf ", incNodes[RC2I(i, j, nE)]);
-    //     printf(", const = %lf\n", conNodes[i]);
-    // }
-    for(i = 0; i < nLeq; ++i){
-        printf("Loop eq %d: ", i);
+    for(i = 0; i < nNeq; ++i){
+        printf("Node eq %d:", i);
         for(j = 0; j < nE; ++j)
-            printf("%lf ", incLoops[RC2I(i, j, nE)]);
+            printf(" %lf", incNodes[RC2I(i, j, nE)]);
+        printf(", const = %lf\n", conNodes[i]);
+    }
+    for(i = 0; i < nLeq; ++i){
+        printf("Loop eq %d:", i);
+        for(j = 0; j < nE; ++j)
+            printf(" %lf", incLoops[RC2I(i, j, nE)]);
         printf(", const = %lf\n", conLoops[i]);
     }
 
@@ -228,6 +232,7 @@ int main(int argc, char *argv[]){
     free(inlets);
     free(parent);
     free(depth);
+    free(hasNeq);
     free(visited);
     free(visitedEdges);
 
@@ -236,12 +241,10 @@ int main(int argc, char *argv[]){
     // Newton's method
 
     // release memory
-    system("pause");
-    free(incNodes);
-    free(conNodes);
-    free(incLoops);
-    free(conLoops);
-    system("pause");
+    free(incNodes); putchar('0'); // why these might get error?
+    free(incLoops); putchar('1');
+    free(conLoops); putchar('2');
+    free(conNodes); putchar('3');
 
     // print result (flowrate on every pipe)
 
