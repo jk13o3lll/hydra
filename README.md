@@ -12,7 +12,10 @@ Pipe network analysis of hydraulics network through both sequential and parallel
 
 1. Modify network
     * For multiple source node, add one additional node and construct fictious loops by connecting source nodes together to the new node.
-    * Merge internal loop between two nodes.
+    * Merge internal loop between two nodes. (more than 2 pipe between node)
+        * dP = r1 Q1^n = r2 Q2^n = r_1,2 (Q1+Q2)^n => r_1,2 = 1 / (sum((1/ri)^(1/n)))^n
+    * Merge pipe with one flow (degree of node = 2)
+        * dP = r1 Q^n + r2 Q^n = r_1,2 Q^n => r_1,2 = sum(ri)
 1. Build [spanning tree](https://en.wikipedia.org/wiki/Spanning_tree) by [BFS](https://en.wikipedia.org/wiki/Parallel_breadth-first_search) and obtain discarded edges.
     * root of BFS start from node has highest degree (most edges connect to) (this is efficient way to decrease total depth or diameter) (or [BFS for every](https://codeforces.com/blog/entry/7372)(can parallel) or [other1](https://www.sciencedirect.com/science/article/pii/0020025595001352) or [other2](https://www.researchgate.net/publication/220617691_Minimum_Diameter_Spanning_Trees_and_Related_Problems))
 1. Put every edge back to the spannnig tree alternatively, and then find the loop by starting from two vertices on the edge and tracing back to their parents until their [lowest common ancestor](https://en.wikipedia.org/wiki/Lowest_common_ancestor).
