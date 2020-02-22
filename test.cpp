@@ -7,6 +7,10 @@
 #include <stdlib.h>
 #include <queue>
 
+// indexing: r = row, c = column, cols = number of columns
+// 2D index to 1D
+#define RC2I(r,c,cols) ((r)*(cols)+(c))
+
 // Notes 1:
 // Pressure loss by Darcy-Weisbach equation (dP = r * Q ^ n), and form loop equations
 // Net node flowrate by mass conservation, and form node equations
@@ -170,11 +174,22 @@ const int nE = sizeof(edgeList) / sizeof(Edge); // number of edges
 const int nN0 = sizeof(srcList) / sizeof(SourceNode);
 int nN = 0, nL = 0; // number of nodes (include sources), number of loops, obtained later
 
-// To calculate matrix inverse (square matrix) by BiCG or BiCGSTAB
-void inv(double *A, double *Ainv, const int nRows, const int nCols){
+
+
+// compute residual
+void computeR(const double *A, const double *x, const double *b, double *R, const int nNeq, const int nLeq){ // R = Ax - b
     return;
 }
 
+// compute jacobian
+void computeJ(const double *A, const double *x, const double *b, double *J, const int nNeq, const int nLeq){ // Jacobian of R
+    return;
+}
+
+// Calculate dx by BiCG or BiCGSTAB instead of calculating inverve Jacobian
+void bicg(const double *A, double *x, const double *b, const int n){ // A should be square (can be nonsymmetric)
+    return;
+}
 
 // main function
 int main(int argc, char *argv[]){
