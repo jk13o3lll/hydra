@@ -45,12 +45,22 @@ bool loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
 }
 
 // bool toEquivalentNetwork(){
-
+    // generate new edge list based on Q'
+    // (necessary) 1. flowrate sources to one node (just merge)
+    // (necessary) 2. merge multiple edges between two node (compute equivalent r)
+    // (optional) 3. form adj, check degree, if deg==2, travel two endpoints until stop and replace by one edge
+    // generate k-list nad o-list
 //     return true;
 // }
 
 // bool fromEquivalentNetwork(){
+    // normal Q = Q'
+    // parallel Q = (r_eq / r)^(1/n) Q' = kQ'
+    // serial Q1 = Q'; Q2 = Q'
 
+    // k[] = [+1, -1, k0, 1, k1, ...] include dir also
+    // o[] = [0, 1, 2, 2, 3, 4, ...]
+    // Q[i] = k[i] * Q'[o[i]]
 //     return true;
 // }
 
@@ -209,6 +219,7 @@ bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType,
     return true;
 }
 
+// bicg and newton are two main parts can be parallelized
 bool bicg(const double *A, double *x, const double *b, const int n){ // x should allocate outside, A should be nxn
 
     return true;
