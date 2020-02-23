@@ -64,6 +64,7 @@ bool loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
 //     return true;
 // }
 
+// this function is not suitable for parallelize
 bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType, const double n, const int nN, const int nN0, const int nE, const  int nL, const int nNeq, const int nLeq, double *&incNode, double *&conNode, double *&incLoop, double *&conLoop){
     Adjacency *adj;
     // for node eq
