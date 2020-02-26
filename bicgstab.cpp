@@ -116,7 +116,7 @@ double* sATx(double s, double *A, double *x, int n, double *res = NULL){
 }
 
 // https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
-//  https://github.com/scipy/scipy/blob/v0.14.0/scipy/sparse/linalg/isolve/iterative.py
+// https://github.com/scipy/scipy/blob/v0.14.0/scipy/sparse/linalg/isolve/iterative.py
 // https://github.com/dimikout3/Parallel-BiCGSTAB-/blob/master/serial.cpp
 double* bicgstab(double *A, double *b, int n, double *x = NULL){
     double *r0_, *r, *v, *p, *s, *t, *tmp; // j = i - 1, x_ = xT
