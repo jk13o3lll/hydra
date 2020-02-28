@@ -179,7 +179,7 @@ void exportA(const char *filename, int n, double *A){
 // https://en.wikipedia.org/wiki/LU_decomposition
 // https://www.mathworks.com/help/matlab/ref/ilu.html
 // https://en.wikipedia.org/wiki/Incomplete_LU_factorization
-// matlab example actually use incomplete LU
+// matlab example actually use incomplete LU (The ILU factorization can be performed as a fixed-point iteration in a highly parallel way.[2])
 // tol can be smaller, and maxIter no need to be large (with preconditioner)
 // TODO: check bicgstab again before implement ilu
 bool bicgstab(int n, double *A, double *b, double *x, double tol = 1e-9, int maxIter = 100, int maxAttemp = 1000){
