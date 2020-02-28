@@ -104,7 +104,7 @@ void printA(const char *name, int n, double *A){
 }
 
 void bicgstab(int n, double *A, double *b, double *x){
-    int maxIter = 100000;
+    int maxIter = 10000;
     double tol = 1e-3;
     double *r0, *r, *p, *v, *s, *t, *tmp; // r0 is actuall r0 transpose
     double rhoi, rhoj, beta, alpha, w;  // j = i + 1
@@ -123,11 +123,11 @@ void bicgstab(int n, double *A, double *b, double *x){
     memcpy(r, r0, n * sizeof(double)); // or add some rand for n-1 dim
     zerox(n, p);
     zerox(n, v);
-    rhoi = alpha = w = 0.0;
+    rhoi = alpha = w = 1.0;
     // start iteration
     for(i = 0; i < maxIter; ++i){
         // stage 1
-        rhoi = xTy(n, r0, r);
+        rhoj = xTy(n, r0, r);
         beta = (rhoj / rhoi) * (alpha / w);
         xminussy(n, p, w, v, tmp);
         xplussy(n, r, beta, tmp, p);
@@ -145,19 +145,22 @@ void bicgstab(int n, double *A, double *b, double *x){
         // if (x is accurate enough) then quit
         xminusAy(n, b, A, x, tmp);
         if(allwithin(n, tmp, tol)) break;
+
+
         // update
         xminussy(n, s, w, t, r);
         rhoi = rhoj;
     }
-    if(i == maxIter)
-        printf("Exceed max iteration.\n");
+    if(i < maxIter)
+        printf("Converge at %d iteration.\n", i+1);
+    else
+        printf("Cannot converge.\n");
     // release
     free(r0); free(r); free(p); free(v); free(s); free(t); free(tmp);
 }
 int main(int argc, char *argv[]){
     // TODO: Test unpreconditioned BiCGSTAB
     // https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
-
     const int n = 3;
     double *A, *x, *b;
     // allocate
@@ -165,11 +168,14 @@ int main(int argc, char *argv[]){
     x = (double*) malloc(n * sizeof(double));
     b = (double*) malloc(n * sizeof(double));
     // init
-
-    printA("A = ", n, A);
-    printx("b = ", n, b);
+    srand(time(NULL));
+    randA(n, A);
+    randx(n, b);
     // bicgstab to solve
     bicgstab(n, A, b, x); // return if maxIter or b-Ax approx 0
+    // print
+    printA("A = ", n, A);
+    printx("b = ", n, b);
     printx("x = ", n, x);
     // release
     free(A); free(x); free(b);
