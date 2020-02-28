@@ -16,12 +16,14 @@ int main(int argc, char *argv[]){
     tmp = (double*) malloc(n * sizeof(double));
     // init
     srand(time(NULL));
-    // randA(n, A);
+    randA(n, A);
     // randAsparse(n, A);
-    randAsparse(n, A, n / 3, 0.7);
+    // randAsparse(n, A, n / 3, 0.7);
     randx(n, b);
-    // bicgstab to solve
-    bicgstab(n, A, b, x); // return if maxIter or b-Ax approx 0
+    // A. bicgstab to solve
+    // bicgstab(n, A, b, x, 1e-3); // return if maxIter or b-Ax approx 0
+    // B. gaussian ellimination to solve
+    gaussian(n, A, b, x);
     xminusAy(n, b, A, x, tmp);
     // print
     printA("A = ", n, A);

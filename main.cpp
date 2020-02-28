@@ -136,7 +136,7 @@ bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType,
         for(tmp = 0, j = 0; j < nN; ++j)
             if(adj[RC2I(i, j, nN)].dir != 0)
                 ++tmp;
-        if(tmp > ii) ii = tmp, root = i;
+        if(tmp > ii){ ii = tmp; root = i; }
     }
     // BFS and get spanning tree
     visited = (bool*)malloc(nN * sizeof(bool));
@@ -145,13 +145,13 @@ bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType,
     depth = (int*)malloc(nN * sizeof(int));
     for(i = 0; i < nN; ++i) visited[i] = false;
     for(i = 0; i < nE; ++i) visitedE[i] = false;
-    parent[root] = -1, depth[root] = 0, visited[root] = true, buffer.push(root);
+    parent[root] = -1; depth[root] = 0; visited[root] = true; buffer.push(root);
     while(!buffer.empty()){
         i = buffer.front(); buffer.pop();
         for(j = 0; j < nN; ++j){
             ii = RC2I(i, j, nN);
             if(adj[ii].dir != 0 && !visited[j]){
-                parent[j] = i, depth[j] = depth[i] + 1, visited[j] = true, buffer.push(j);
+                parent[j] = i; depth[j] = depth[i] + 1; visited[j] = true; buffer.push(j);
                 visitedE[adj[ii].edge] = true;
             }
         }
@@ -217,12 +217,6 @@ bool getEquations(const Edge *edgeList, const Source *srcList, const int bcType,
 
     // release memory
     free(adj);
-    return true;
-}
-
-// bicg and newton are two main parts can be parallelized
-bool bicg(const double *A, double *x, const double *b, const int n){ // x should allocate outside, A should be nxn
-
     return true;
 }
 

@@ -4,6 +4,10 @@
 #include <time.h>
 #include <math.h>
 
+inline double swap(double &a, double &b){
+    double tmp = a; a = b; b = tmp;
+}
+
 // x, y, z: vector; A, B: matrix; s: scalar
 int allwithin(int n, double *x, double s){
     int i;
@@ -52,10 +56,12 @@ void randAsparse(int n, double *A, int a = 0, double p = 0.9, bool permute = tru
         for(i = 0; i < n; ++i){
             // row permutation
             ii = rand() % n;
-            for(j = 0; j < n; ++j){ tmp = A[i*n+j]; A[i*n+j] = A[ii*n+j]; A[ii*n+j] = tmp; }
+            for(j = 0; j < n; ++j)
+                swap(A[i*n+j], A[ii*n+j]);
             // column permutation
             ii = rand() % n;
-            for(j = 0; j < n; ++j){ tmp = A[j*n+i]; A[j*n+i] = A[j*n+ii]; A[j*n+ii] = tmp; }
+            for(j = 0; j < n; ++j)
+                swap(A[j*n+i], A[j*n+ii]);
         }
 }
 double xTy(int n, double *x, double *y){
@@ -138,11 +144,12 @@ void printA(const char *name, int n, double *A){
 }
 
 // https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
-// good for large and sparse, may not converge for large and dense systems
-void bicgstab(int n, double *A, double *b, double *x, int maxIter = 1000, double tol = 1e-6, int maxAttemp = 1000){
+// good for large and sparse, may not converge for large and dense systems?
+// why my implementation cannot converge when n goes high?
+bool bicgstab(int n, double *A, double *b, double *x, double tol = 1e-3, int maxIter = 1000, int maxAttemp = 1000){
     double *r0, *r, *p, *v, *s, *t, *tmp; // r0 is actuall r0 transpose
     double rhoi, rhoj, beta, alpha, w;  // j = i + 1
-    int i, j, res;
+    int i, j, res, ret;
 
     // adjust max iteration based on matrix size
     if(10 * n > maxIter)
@@ -158,6 +165,7 @@ void bicgstab(int n, double *A, double *b, double *x, int maxIter = 1000, double
     t = (double*) malloc(n * sizeof(double));
     tmp = (double*) malloc(n * sizeof(double));
     // attempts
+    ret = false;
     for(i = 0; i < maxAttemp; ++i){
         printf("Attempt %d:\n", i + 1);
         // init
@@ -201,6 +209,7 @@ void bicgstab(int n, double *A, double *b, double *x, int maxIter = 1000, double
             printf("Cannot converge.\n");
         else if(res == 1){
             printf("Converge at %d iteration.\n", i+1);
+            ret = true;
             break;
         }
         else if(res == 2)
@@ -208,8 +217,88 @@ void bicgstab(int n, double *A, double *b, double *x, int maxIter = 1000, double
     }
     // release
     free(r0); free(r); free(p); free(v); free(s); free(t); free(tmp);
+    return ret;
 }
-
 
 // for large and dense, try Gauss-Jordan?
 // https://en.wikipedia.org/wiki/Gaussian_elimination
+// https://en.wikipedia.org/wiki/Pivot_element#Partial_and_complete_pivoting
+// select row with largest absolute value on specific column
+bool gaussian(int n, double *A, double *b, double *x){
+    double *G;
+    int pr, pc, pi; // pivot row, pivot column, pivot index
+    int i, j, ii, jj, ret;
+    double gmax, tmp;
+
+    // allocate
+    G = (double*) malloc(n * n * sizeof(double));
+    // init
+    memcpy(G, A, n * n * sizeof(double));
+    memcpy(x, b, n * sizeof(double));
+    // To row encholon form
+    for(pr = pc = 0; pr < n && pc < n; ){
+        // find max abs
+        pi = pr;
+        gmax = fabs(G[pr*n+pc]);
+        for(i = pr+1; i < n; ++i){
+            tmp = fabs(G[i*n+pc]);
+            if(tmp > gmax){ pi = i; gmax = tmp; }
+        }
+        // start ellimination
+        if(gmax < 1e-12){ // pivot is zeri
+            G[pr*n+pc] = NAN; // for convenience later
+            ++pc;
+        }
+        else{
+            // swap row
+            if(pr != pi){
+                for(ii = pr * n, jj = pi * n, i = pc; i < n; ++i)
+                    swap(G[ii+i], G[jj+i]);
+                swap(x[pr], x[pi]);
+            }
+            // elliminate
+            for(i = pr + 1; i < n; ++i){
+                tmp = G[i*n+pc] / G[pr*n+pc];
+                G[i*n+pc] = 0.0;
+                for(j = pc + 1; j < n; ++j)
+                    G[i*n+j] -= G[pr*n+j] * tmp;
+                x[i] -= x[pr] * tmp;
+            }
+            ++pc;
+            ++pr;               
+        }
+    }
+    // retrieve x
+    ret = true;
+    for(pr = pc = n - 1; pr >= 0 && pc >=0; ){
+        printf("pr=%d, pc=%d\n", pr, pc);
+        if(pr + 1 < n && isnan(G[(pr+1)*n+pc])){
+            printf("Has multiple solutions for x[%d]\n", pc);
+            x[pc] = 0.0; // can be arbitrary, but set to zero, we don't have to update other things
+            --pc;
+        }
+        else if(fabs(G[pr*n+pc]) < 1e-12){
+            if(fabs(x[pr]) > 1e-12){
+                puts("No solution");
+                ret = false;
+                break;
+            }
+            --pr;
+        }
+        else{
+            x[pc] /= G[pr*n+pc];
+            // update
+            for(i = pr - 1; i >= 0; --i)
+                x[i] -= G[i*n+pc] * x[pc];
+            --pr;
+            --pc;
+        }
+    }
+    // release
+    free(G);
+    return ret;
+}
+
+// CUDA Solver (use cuSolverSP: Sparse LAPACK)
+// https://docs.nvidia.com/cuda/cusolver/index.html
+// Google: Gaussian elimination large sparse
