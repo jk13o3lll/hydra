@@ -174,7 +174,15 @@ void exportA(const char *filename, int n, double *A){
 // https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 // good for large and sparse, may not converge for large and dense systems?
 // why my implementation cannot converge when n goes high? is it because we didn't use preconditioner?
-bool bicgstab(int n, double *A, double *b, double *x, double tol = 1e-3, int maxIter = 1000, int maxAttemp = 1000){
+// from this example: https://www.mathworks.com/help/matlab/ref/bicgstab.html
+// it only work when using LU as preconditioner, so try LU
+// https://en.wikipedia.org/wiki/LU_decomposition
+// https://www.mathworks.com/help/matlab/ref/ilu.html
+// https://en.wikipedia.org/wiki/Incomplete_LU_factorization
+// matlab example actually use incomplete LU
+// tol can be smaller, and maxIter no need to be large (with preconditioner)
+// TODO: check bicgstab again before implement ilu
+bool bicgstab(int n, double *A, double *b, double *x, double tol = 1e-9, int maxIter = 100, int maxAttemp = 1000){
     double *r0, *r, *p, *v, *s, *t, *tmp; // r0 is actuall r0 transpose
     double rhoi, rhoj, beta, alpha, w;  // j = i + 1
     int i, j, res, ret;
