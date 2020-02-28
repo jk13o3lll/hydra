@@ -142,10 +142,38 @@ void printA(const char *name, int n, double *A){
         putchar('\n');
     }
 }
+void loadx(const char *filename, int n, double *x){
+    FILE *fp = fopen(filename, "r");
+    for(int i = 0; i < n; ++i)
+        fscanf(fp, "%lf", &x[i]);
+    fclose(fp);
+}
+void loadA(const char *filename, int n, double *A){
+    FILE *fp = fopen(filename, "r");
+    int n2 = n * n;
+    for(int i = 0; i < n2; ++i)
+        fscanf(fp, "%lf", &A[i]);
+    fclose(fp);
+}
+void exportx(const char *filename, int n, double *x){
+    FILE *fp = fopen(filename, "w");
+    for(int i = 0; i < n; ++i)
+        fprintf(fp, "%lf\n", x[i]);
+    fclose(fp);
+}
+void exportA(const char *filename, int n, double *A){
+    FILE *fp = fopen(filename, "w");
+    for(int i = 0; i < n; ++i){
+        for(int j = 0; j < n; ++j)
+            fprintf(fp, "%lf ", A[i*n+j]);
+        fputc('\n', fp);
+    }
+    fclose(fp);
+}
 
 // https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
 // good for large and sparse, may not converge for large and dense systems?
-// why my implementation cannot converge when n goes high?
+// why my implementation cannot converge when n goes high? is it because we didn't use preconditioner?
 bool bicgstab(int n, double *A, double *b, double *x, double tol = 1e-3, int maxIter = 1000, int maxAttemp = 1000){
     double *r0, *r, *p, *v, *s, *t, *tmp; // r0 is actuall r0 transpose
     double rhoi, rhoj, beta, alpha, w;  // j = i + 1
