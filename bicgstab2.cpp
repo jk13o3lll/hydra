@@ -103,9 +103,7 @@ void printA(const char *name, int n, double *A){
     }
 }
 
-void bicgstab(int n, double *A, double *b, double *x){
-    int maxIter = 10000;
-    double tol = 1e-3;
+void bicgstab(int n, double *A, double *b, double *x, int maxIter = 10000, double tol = 1e-6){
     double *r0, *r, *p, *v, *s, *t, *tmp; // r0 is actuall r0 transpose
     double rhoi, rhoj, beta, alpha, w;  // j = i + 1
     int i, j;
@@ -161,23 +159,26 @@ void bicgstab(int n, double *A, double *b, double *x){
 int main(int argc, char *argv[]){
     // TODO: Test unpreconditioned BiCGSTAB
     // https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method
-    const int n = 3;
-    double *A, *x, *b;
+    const int n = 10;
+    double *A, *x, *b, *tmp;
     // allocate
     A = (double*) malloc(n * n * sizeof(double));
     x = (double*) malloc(n * sizeof(double));
     b = (double*) malloc(n * sizeof(double));
+    tmp = (double*) malloc(n * sizeof(double));
     // init
     srand(time(NULL));
     randA(n, A);
     randx(n, b);
     // bicgstab to solve
     bicgstab(n, A, b, x); // return if maxIter or b-Ax approx 0
+    xminusAy(n, b, A, x, tmp);
     // print
     printA("A = ", n, A);
     printx("b = ", n, b);
     printx("x = ", n, x);
+    printx("b - Ax = ", n, tmp);
     // release
-    free(A); free(x); free(b);
+    free(A); free(x); free(b); free(tmp);
     return 0;
 }
