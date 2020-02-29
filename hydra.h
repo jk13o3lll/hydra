@@ -60,7 +60,7 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     bool *visited;  // record visited nodes while building spanning tree
     bool *visitedE; // record vistied edge (for using non-visited edges later)
     int *parent;    // parent of every node in spanning tree
-    int *detph;     // depth of every node in spanning tree
+    int *depth;     // depth of every node in spanning tree
     std::queue<int> buffer; // buffer for BFS
 
     // convert original network to equivalent one
@@ -87,8 +87,8 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // construct incidence and constants matrix for node eq
     incNode = (double*) malloc(nNeq * nE * sizeof(double));
     conNode = (double*) malloc(nNeq * sizeof(double));
-    memset(conNode, 0, nNeq * sizeof(double));
     memset(incNode, 0, nNeq * nE * sizeof(double));
+    memset(conNode, 0, nNeq * sizeof(double));
     if(bcType == 0){ // bc is flowrate
         inlet = (double*) malloc(nN * sizeof(double));
         memset(inlet, 0, nN * sizeof(double));
@@ -126,15 +126,80 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // }
 
     // use BFS and get spanning tree (for finding independent loops)
-    
+    for(ii = 0, i = 0; i < nN; ++i){ // use node with max degree as root
+        for(tmp = 0, j = 0; j < nN; ++j)
+            if(adj[i*nN+j].dir != 0)
+                ++tmp;
+        if(tmp > ii) ii = tmp, root = i;
+    }
+    // printf("root is node %d (deg = %d)\n", root, ii);
+    visited = (bool*) malloc(nN * sizeof(bool));
+    visitedE = (bool*) malloc(nE * sizeof(bool));
+    parent = (int*) malloc(nN * sizeof(int));
+    depth = (int*) malloc(nN * sizeof(int));
+    memset(visited, 0, nN * sizeof(bool));
+    memset(visitedE, 0, nE * sizeof(bool));
+    parent[root] = -1, depth[root] = 0, visited[root] = true, buffer.push(root);
+    while(!buffer.empty()){
+        i = buffer.front(), buffer.pop();
+        for(j = 0; j < nN; ++j)
+            if(adj[(ii = i*nN+j)].dir != 0 && !visited[j]){
+                parent[j] = i, depth[j] = depth[i] + 1, visited[j] = true, buffer.push(j);
+                visitedE[adj[ii].edge] = true;
+            }
+    }
+    free(visited);
+    // // test
+    // for(i = 0; i < nN; ++i)
+    //     printf("parent of node %d is node %d\n", i, parent[i]);
+    // for(tmp = 0, i = 0; i < nE; ++i)
+    //     if(!visitedE[i])
+    //         ++tmp;
+    // if(bcType == 0)
+    //     printf("%d edges are not in BFS spanning tree (nLeq = %d)\n", tmp, nLeq);
+    // else if(bcType == 1)
+    //     printf("%d edges are not in BFS spanning tree (nLeq - %d = %d)\n", tmp, nN0-1, nLeq-nN0+1);
 
     // construct incidence and constants matrix for loop eq
     incLoop = (double*) malloc(nLeq * nE * sizeof(double));
     conLoop = (double*) malloc(nLeq * sizeof(double));
-
-
-    // release
-    free(adj);
+    memset(incLoop, 0, nLeq * nE * sizeof(double));
+    memset(conLoop, 0, nLeq * sizeof(double));
+    for(tmp = 0, i = 0; i < nE; ++i)
+        if(!visitedE[i]){ // start from non-visited edge
+            for(ii = edgeList[i].a , jj = edgeList[i].b; ii != jj; ) // find lowest common ancient
+                if(depth[ii] > depth[jj]){ // for ii, parent -> child is same as loop dir
+                    kk = parent[ii] * nN + ii;
+                    k = adj[kk].edge;
+                    // whether direction of loop is same as defined flow direction
+                    incLoop[tmp*nE+k] = adj[kk].dir == 1? edgeList[k].r : -edgeList[k].r;
+                    ii = parent[ii];
+                }
+                else{ // depth[ii] <= depth[jj], for jj, parent -> child is opposite to loop dir
+                    kk = jj * nN + parent[jj];
+                    k = adj[kk].edge;
+                    // whether direction of loop is same as defined flow direction
+                    incLoop[tmp*nE+k] = adj[kk].dir == 1? edgeList[k].r : -edgeList[k].r;
+                    jj = parent[ii];
+                }
+            // use edgeList[i].a -> edgeList[i].b as loop dir (loop dir = edge dir)
+            incLoop[tmp*nE+i] = edgeList[i].r;
+            conLoop[tmp++] = 0.0;
+        }
+    if(bcType == 1){ // additional loops of passing src (if bc is pressure)
+        for(i = 1; i < nN0; ++i){
+            
+        }
+    }
+    free(visitedE); free(parent); free(depth); free(adj);
+    // test
+    for(i = 0; i < nLeq; ++i){
+        printf("Loop eq %d:", i);
+        for(j = 0; j < nE; ++j)
+            printf(" %.2lf", incLoop[i*nE+j]);
+        printf(", c = %.2lf\n", conLoop[i]);
+    }
+    
 }
 
 void computeF(){}
