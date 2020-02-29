@@ -261,9 +261,9 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
     // solve by newton's method
     for(i = 0; i < 100; ++i){ // has multiple attempts
         printf("Attempt %d\n", i + 1);
+        // zerox(nE, x);
+        randx(nE, x, 20.0, -10.0);
         for(j = 0; j < maxiter; ++j){
-            // zerox(nE, x);
-            randx(nE, x, 20.0, -10.0);
             // get residual and jacobian
             computeR(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n, bufferx, R);
             computeJ(nE, nLeq, nNeq, incLoop, incNode, x, n, bufferx, J);
