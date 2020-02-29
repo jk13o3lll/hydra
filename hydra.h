@@ -180,7 +180,7 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
                     k = adj[kk].edge;
                     // whether direction of loop is same as defined flow direction
                     incLoop[tmp*nE+k] = adj[kk].dir == 1? edgeList[k].r : -edgeList[k].r;
-                    jj = parent[ii];
+                    jj = parent[jj];
                 }
             // use edgeList[i].a -> edgeList[i].b as loop dir (loop dir = edge dir)
             incLoop[tmp*nE+i] = edgeList[i].r;
@@ -201,7 +201,7 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
                     k = adj[kk].edge;
                     // whether direction of loop is same as defined flow direction
                     incLoop[tmp*nE+k] = adj[kk].dir == 1? edgeList[k].r : -edgeList[k].r;
-                    jj = parent[ii];
+                    jj = parent[jj];
                 }
             // constant pressure change between source nodes
             // use srcList[0].node -> srcList[i].node as loop dir (rQ is presure drop)
