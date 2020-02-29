@@ -261,8 +261,8 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
     // solve by newton's method
     for(i = 0; i < 100; ++i){ // has multiple attempts
         printf("Attempt %d\n", i + 1);
-        // zerox(nE, x);
-        randx(nE, x, 20.0, -10.0);
+        // randx(nE, x, 20.0, -10.0);
+        randx(nE, x, 2.0, -1.0);
         for(j = 0; j < maxiter; ++j){
             // get residual and jacobian
             computeR(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n, bufferx, R);
@@ -270,15 +270,17 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
             // get dx and update
             // bicgstab(nE, J, R, dx);
             gaussian(nE, J, R, dx);
+            // xplusy(nE, x, dx, x);
+            // xplussy(nE, x, 0.1, dx, x); // 0.1 step size
             xplussy(nE, x, 0.5, dx, x); // half step size
             // check
             if((k = allzero(nE, R, 1e-3)) > 0) break;
             // debug
-            // printA("J = \n", nE, J);
+            printA("J = \n", nE, J);
             printx("R = ", nE, R);
-            // printx("dx = ", nE, dx);
-            // printx("x = ", nE, x);
-            // getchar();
+            printx("dx = ", nE, dx);
+            printx("x = ", nE, x);
+            getchar();
         }
         if(j == maxiter)
             puts("Caonnot converge");
