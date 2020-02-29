@@ -9,6 +9,7 @@ int main(int argc, char *argv[]){
     double n;
     int nN, nN0, nE, nL, nNeq, nLeq; // nN include src nodes
     double *incNode, *conNode, *incLoop, *conLoop; // incidence matrix and constant vectors of node and loop equations (constant at the same side with unknowns)
+    double *x;
     int i, j;
 
     if(argc != 2){ fprintf(stderr, "Wrong input arguments\n"); return 1; }
@@ -28,24 +29,30 @@ int main(int argc, char *argv[]){
     // get equations
     getEquations(edgeList, srcList, bcType, n, nN, nN0, nE, nL, nNeq, nLeq, incNode, conNode, incLoop, conLoop);
     free(edgeList); free(srcList);
-    // for(i = 0; i < nNeq; ++i){ // show node equations
-    //     printf("Node eq %d:", i);
-    //     for(j = 0; j < nE; ++j)
-    //         printf(" %.2lf", incNode[i*nE+j]);
-    //     printf(", con = %.2lf\n", conNode[i]);
-    // }
-    // for(i = 0; i < nLeq; ++i){ // show loop equations
-    //     printf("Loop eq %d:", i);
-    //     for(j = 0; j < nE; ++j)
-    //         printf(" %.2lf", incLoop[i*nE+j]);
-    //     printf(", con = %.2lf\n", conLoop[i]);
-    // }
+    for(i = 0; i < nNeq; ++i){ // show node equations
+        printf("Node eq %d:", i);
+        for(j = 0; j < nE; ++j)
+            printf(" %.2lf", incNode[i*nE+j]);
+        printf(", con = %.2lf\n", conNode[i]);
+    }
+    for(i = 0; i < nLeq; ++i){ // show loop equations
+        printf("Loop eq %d:", i);
+        for(j = 0; j < nE; ++j)
+            printf(" %.2lf", incLoop[i*nE+j]);
+        printf(", con = %.2lf\n", conLoop[i]);
+    }
 
-    // // solve flowrate on each pipe
-    // solve();
-    //     // plot results
-    free(incNode); free(conNode); free(incLoop); free(conNode);
+    printf("Press <Enter> to start."); getchar();
 
+    // solve flowrate on each pipe
+    solve(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n);
+    free(incLoop); free(conLoop); free(incNode); free(conNode);
+
+    // plot results
+    printx("x = ", nE, x);
+
+    // release
+    free(x);
     return 0;
 }
 

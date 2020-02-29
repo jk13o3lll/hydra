@@ -209,20 +209,19 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
         }
     }
     free(visitedE); free(parent); free(depth); free(adj);
-    // test
-    for(i = 0; i < nLeq; ++i){
-        printf("Loop eq %d:", i);
-        for(j = 0; j < nE; ++j)
-            printf(" %.2lf", incLoop[i*nE+j]);
-        printf(", c = %.2lf\n", conLoop[i]);
-    }
+    // // test
+    // for(i = 0; i < nLeq; ++i){
+    //     printf("Loop eq %d:", i);
+    //     for(j = 0; j < nE; ++j)
+    //         printf(" %.2lf", incLoop[i*nE+j]);
+    //     printf(", c = %.2lf\n", conLoop[i]);
+    // }
 }
 
 // A(x) + c = 0
 // R is vector, R = -F = -(A(x) + c)
 void computeR(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *x, double n, double *tmp, double *res){
-    double *res2 = res + nLeq * nE; // pointer with offest
-    int i, j;
+    int i, j, offset = nLeq;
     #pragma omp parallel for
     for(i = 0; i < nE; ++i) // tmp for store pow(x)
         tmp[i] = pow(x[i], n);
@@ -232,15 +231,14 @@ void computeR(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, doub
             res[i] -= incLoop[i*nE+j] * tmp[j];
     }
     for(i = 0; i < nNeq; ++i){
-        res2[i] = -conNode[i];
+        res[offset + i] = -conNode[i];
         for(j = 0; j < nE; ++j)
-            res2[i] -= incNode[i*nE+j] * x[j];
+            res[offset + i] -= incNode[i*nE+j] * x[j];
     }
 }
 // J is matrix, J = Jacobian(F)
 void computeJ(int nE, int nLeq, int nNeq, double *incLoop, double *incNode, double *x, double n, double *tmp, double *res){
-    double *res2 = res + nLeq * nE; // pointer with offset
-    int i, j;
+    int i, j, offset = nLeq * nE;
     #pragma omp parallel for
     for(i = 0; i < nE; ++i)
         tmp[i] = pow(x[i], n - 1.0);
@@ -249,28 +247,49 @@ void computeJ(int nE, int nLeq, int nNeq, double *incLoop, double *incNode, doub
             res[i*nE+j] = incLoop[i*nE+j] * n * tmp[i];
     for(i = 0; i < nNeq; ++i)
         for(j = 0; j < nE; ++j)
-            res2[i*nE+j] = incNode[i*nE+j];
+            res[offset + i*nE+j] = incNode[i*nE+j];
 }
-void solve(){
+void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *&x, double n, int maxiter = 100000, int maxattempts = 10){
+    int i, j, k;
+    double *R, *J, *bufferx, *dx;
+    // allocate
+    R = (double*) malloc(nE * sizeof(double));
+    J = (double*) malloc((nLeq + nNeq) * nE * sizeof(double));
+    bufferx = (double*) malloc(nE * sizeof(double));
+    dx = (double*) malloc(nE * sizeof(double));
+    x = (double*) malloc(nE * sizeof(double));
     // solve by newton's method
-        // has multile attempts
-
-        // set x to initial x (rand or zero)
-        // set dx = inf
-
-        // for(nIter = 0; norm(dx) > tol && nIter < nMaxIter; ++nIter){
-        //     // compute R
-        //     // compute J
-        //     // bicg(R, dx, J)
-        //     // x += dx
-        // }
-
-        // return nIter < nMaxIter? true : false;
-
-
-
-
-
+    for(i = 0; i < 100; ++i){ // has multiple attempts
+        printf("Attempt %d\n", i + 1);
+        for(j = 0; j < maxiter; ++j){
+            // zerox(nE, x);
+            randx(nE, x, 20.0, -10.0);
+            // get residual and jacobian
+            computeR(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n, bufferx, R);
+            computeJ(nE, nLeq, nNeq, incLoop, incNode, x, n, bufferx, J);
+            // get dx and update
+            // bicgstab(nE, J, R, dx);
+            gaussian(nE, J, R, dx);
+            xplussy(nE, x, 0.5, dx, x); // half step size
+            // check
+            if((k = allzero(nE, R, 1e-3)) > 0) break;
+            // debug
+            // printA("J = \n", nE, J);
+            printx("R = ", nE, R);
+            // printx("dx = ", nE, dx);
+            // printx("x = ", nE, x);
+            // getchar();
+        }
+        if(j == maxiter)
+            puts("Caonnot converge");
+        else if(k == 2)
+            puts("Detect NaN");
+        else{
+            printf("Converge at iteration %d\n", j + 1);
+            break;
+        }
+    }
+    free(R); free(J); free(bufferx); free(dx);
 
     // toOriginalNetwork(); // convert back to original network
 }
