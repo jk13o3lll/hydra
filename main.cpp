@@ -44,7 +44,7 @@ bool loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
     return true;
 }
 
-// bool toEquivalentNetwork(){
+// bool toEquivalentNetwork(vector<int> original[nN][nN], int eqivalent[nN][nN]){
     // generate new edge list based on Q'
     // (necessary) 1. flowrate sources to one node (just merge)
     // (necessary) 2. merge multiple edges between two node (compute equivalent r)
@@ -53,7 +53,7 @@ bool loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
 //     return true;
 // }
 
-// bool fromEquivalentNetwork(){
+// bool fromEquivalentNetwork(vector<int> original[nN][nN], int eqivalent[nN][nN], double x[nE]){
     // normal Q = Q'
     // parallel Q = (r_eq / r)^(1/n) Q' = kQ'
     // serial Q1 = Q'; Q2 = Q'
