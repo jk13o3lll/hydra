@@ -149,16 +149,16 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
             }
     }
     free(visited);
-    // // test
-    // for(i = 0; i < nN; ++i)
-    //     printf("parent of node %d is node %d\n", i, parent[i]);
-    // for(tmp = 0, i = 0; i < nE; ++i)
-    //     if(!visitedE[i])
-    //         ++tmp;
-    // if(bcType == 0)
-    //     printf("%d edges are not in BFS spanning tree (nLeq = %d)\n", tmp, nLeq);
-    // else if(bcType == 1)
-    //     printf("%d edges are not in BFS spanning tree (nLeq - %d = %d)\n", tmp, nN0-1, nLeq-nN0+1);
+    // test
+    for(i = 0; i < nN; ++i)
+        printf("parent of node %d is node %d\n", i, parent[i]);
+    for(tmp = 0, i = 0; i < nE; ++i)
+        if(!visitedE[i])
+            ++tmp;
+    if(bcType == 0)
+        printf("%d edges are not in BFS spanning tree (nLeq = %d)\n", tmp, nLeq);
+    else if(bcType == 1)
+        printf("%d edges are not in BFS spanning tree (nLeq - %d = %d)\n", tmp, nN0-1, nLeq-nN0+1);
 
     // construct incidence and constants matrix for loop eq
     incLoop = (double*) malloc(nLeq * nE * sizeof(double));
@@ -187,8 +187,25 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
             conLoop[tmp++] = 0.0;
         }
     if(bcType == 1){ // additional loops of passing src (if bc is pressure)
-        for(i = 1; i < nN0; ++i){
-            
+        for(i = 1; i < nN0; ++i){ // connect the first src node to others
+            for(ii = srcList[0].node, jj = srcList[i].node; ii != jj; )
+                if(depth[ii] > depth[jj]){
+                    kk = parent[ii] * nN + ii;
+                    k = adj[kk].edge;
+                    // whether direction of loop is same as defined flow direction
+                    incLoop[tmp*nE+k] = adj[kk].dir == 1? edgeList[k].r : -edgeList[k].r;
+                    ii = parent[ii];
+                }
+                else{ // depth[ii] <= depth[jj]
+                    kk = jj * nN + parent[jj];
+                    k = adj[kk].edge;
+                    // whether direction of loop is same as defined flow direction
+                    incLoop[tmp*nE+k] = adj[kk].dir == 1? edgeList[k].r : -edgeList[k].r;
+                    jj = parent[ii];
+                }
+            // constant pressure change between source nodes
+            // use srcList[0].node -> srcList[i].node as loop dir (rQ is presure drop)
+            conLoop[tmp++] = srcList[0].bc - srcList[i].bc; // watch out dir
         }
     }
     free(visitedE); free(parent); free(depth); free(adj);
