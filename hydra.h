@@ -216,11 +216,41 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
             printf(" %.2lf", incLoop[i*nE+j]);
         printf(", c = %.2lf\n", conLoop[i]);
     }
-    
 }
 
-void computeF(){}
-void computeJ(){}
+// A(x) + c = 0
+// R is vector, R = -F = -(A(x) + c)
+void computeR(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *x, double n, double *tmp, double *res){
+    double *res2 = res + nLeq * nE; // pointer with offest
+    int i, j;
+    #pragma omp parallel for
+    for(i = 0; i < nE; ++i) // tmp for store pow(x)
+        tmp[i] = pow(x[i], n);
+    for(i = 0; i < nLeq; ++i){
+        res[i] = -conLoop[i];
+        for(j = 0; j < nE; ++j)
+            res[i] -= incLoop[i*nE+j] * tmp[j];
+    }
+    for(i = 0; i < nNeq; ++i){
+        res2[i] = -conNode[i];
+        for(j = 0; j < nE; ++j)
+            res2[i] -= incNode[i*nE+j] * x[j];
+    }
+}
+// J is matrix, J = Jacobian(F)
+void computeJ(int nE, int nLeq, int nNeq, double *incLoop, double *incNode, double *x, double n, double *tmp, double *res){
+    double *res2 = res + nLeq * nE; // pointer with offset
+    int i, j;
+    #pragma omp parallel for
+    for(i = 0; i < nE; ++i)
+        tmp[i] = pow(x[i], n - 1.0);
+    for(i = 0; i < nLeq; ++i)
+        for(j = 0; j < nE; ++j)
+            res[i*nE+j] = incLoop[i*nE+j] * n * tmp[i];
+    for(i = 0; i < nNeq; ++i)
+        for(j = 0; j < nE; ++j)
+            res2[i*nE+j] = incNode[i*nE+j];
+}
 void solve(){
     // solve by newton's method
         // has multile attempts
@@ -229,9 +259,9 @@ void solve(){
         // set dx = inf
 
         // for(nIter = 0; norm(dx) > tol && nIter < nMaxIter; ++nIter){
-        //     // compute F
+        //     // compute R
         //     // compute J
-        //     // bicg(F, dx, J)
+        //     // bicg(R, dx, J)
         //     // x += dx
         // }
 
