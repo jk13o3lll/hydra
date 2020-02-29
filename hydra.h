@@ -1,3 +1,5 @@
+// TODO: 1. Check node eq, loop eq, and data; 2. Check R, J; 3. Check others
+
 #include "solver.h"
 #include <queue>
 
@@ -262,7 +264,8 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
     for(i = 0; i < 100; ++i){ // has multiple attempts
         printf("Attempt %d\n", i + 1);
         // randx(nE, x, 20.0, -10.0);
-        randx(nE, x, 2.0, -1.0);
+        // randx(nE, x, 2.0, -1.0);
+        randx(nE, x, 10.0);
         for(j = 0; j < maxiter; ++j){
             // get residual and jacobian
             computeR(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n, bufferx, R);
