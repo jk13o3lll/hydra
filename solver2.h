@@ -79,7 +79,7 @@ inline void xminusAy(int n, long double *x, long double *A, long double *y, long
 void printx(const char *prefix, int n, long double *x){
     printf("%s", prefix);
     for(int i = 0; i < n; ++i)
-        printf("%.3Lf ", x[i]);
+        printf("%.8Lf ", x[i]);
     putchar('\n');
 }
 void printA(const char *prefix, int n, long double *A){
