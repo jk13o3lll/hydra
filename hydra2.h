@@ -1,17 +1,22 @@
-// TODO: 1. Check node eq, loop eq, and data; 2. Check R, J; 3. Check others
+// BUG: large scale cannot converge, bcType==1 not easy to converge
+// for network3 (network2 use pressure bc), it can converge but difficult (depend on IC)
+// TODO: 1. Check R, J; 2. Check others (for network 3, 4, it drop at the begining but diverge after x iteration)
 // DONE: 1. gaussian seems no problem, 2. adjust to smaller step size and bigger tolerance network2 can solve
+//       3. long double doesn't make change, 4. DFS doesn't make change
+//       5. check node eq, 6, check data, 7. Check loop eq (change other set of eq?)
 
-#include "solver.h"
+#include "solver2.h"
 #include <queue>
+#include <stack>
 
 extern "C" {
     struct Edge {
         int a, b;
-        double r;
+        long double r;
     };
     struct Source {
         int node;
-        double bc;
+        long double bc;
     };
     struct Adjacency {
         int edge;
@@ -19,15 +24,15 @@ extern "C" {
     };
 }
 
-void loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcType, double &n, int &nN, int &nN0, int &nE, int &nL, int &nNeq, int &nLeq){
+void loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcType, long double &n, int &nN, int &nN0, int &nE, int &nL, int &nNeq, int &nLeq){
     FILE *fp;
     int i, j, k, a, b;
-    double r;
+    long double r;
 
     fp = fopen(filename, "r");
     // load parameters
     if(fp == NULL){ fprintf(stderr, "Failed to load data\n"); return; }
-    fscanf(fp, "%d %d %d %d %lf", &nN, &nE, &nN0, &bcType, &n);
+    fscanf(fp, "%d %d %d %d %Lf", &nN, &nE, &nN0, &bcType, &n);
     if(nN <= 0 || nE <= 0 || nN <= 1 ||
         (bcType != 0 && bcType != 1) ||
         (n < 1.5 || n > 2.1)){
@@ -39,9 +44,9 @@ void loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
     srcList = (Source*) malloc(nN0 * sizeof(Source));
     // load pipe data
     for(i = 0; i < nE; ++i)
-        fscanf(fp, "%d %d %lf", &edgeList[i].a, &edgeList[i].b, &edgeList[i].r);
+        fscanf(fp, "%d %d %Lf", &edgeList[i].a, &edgeList[i].b, &edgeList[i].r);
     for(i = 0; i < nN0; ++i)
-        fscanf(fp, "%d %lf", &srcList[i].node, &srcList[i].bc);
+        fscanf(fp, "%d %Lf", &srcList[i].node, &srcList[i].bc);
     fclose(fp);
     // retrieve other dimensions
     nL = nE - nN + 1;
@@ -52,12 +57,12 @@ void loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
 // void toEqivalentNetwork(){}
 // void toOriginalNetwork(){}
 
-void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN, int nN0, int nE, int nL, int nNeq, int nLeq, double *&incNode, double *&conNode, double *&incLoop, double *&conLoop){
+void getEquations(Edge *edgeList, Source *srcList, int bcType, long double n, int nN, int nN0, int nE, int nL, int nNeq, int nLeq, long double *&incNode, long double *&conNode, long double *&incLoop, long double *&conLoop){
     int i, j, k, ii, jj, kk, tmp;
     Adjacency *adj;
     // for node eq
     bool *hasNeq;  // whether that node has node eq (sometimes src nodes are removed)
-    double *inlet; // inlet flow for every node (from srcList)
+    long double *inlet; // inlet flow for every node (from srcList)
     // for loop eq
     int root;       // root of spanning tree
     bool *visited;  // record visited nodes while building spanning tree
@@ -65,6 +70,7 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     int *parent;    // parent of every node in spanning tree
     int *depth;     // depth of every node in spanning tree
     std::queue<int> buffer; // buffer for BFS
+    // std::stack<int> buffer; // buffer for DFS
 
     // convert original network to equivalent one
     // toEqivalentNetwork(); // ex. merge parallel edge, merge sources, ...
@@ -88,13 +94,13 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // }
 
     // construct incidence and constants matrix for node eq
-    incNode = (double*) malloc(nNeq * nE * sizeof(double));
-    conNode = (double*) malloc(nNeq * sizeof(double));
-    memset(incNode, 0, nNeq * nE * sizeof(double));
-    memset(conNode, 0, nNeq * sizeof(double));
+    incNode = (long double*) malloc(nNeq * nE * sizeof(long double));
+    conNode = (long double*) malloc(nNeq * sizeof(long double));
+    memset(incNode, 0, nNeq * nE * sizeof(long double));
+    memset(conNode, 0, nNeq * sizeof(long double));
     if(bcType == 0){ // bc is flowrate
-        inlet = (double*) malloc(nN * sizeof(double));
-        memset(inlet, 0, nN * sizeof(double));
+        inlet = (long double*) malloc(nN * sizeof(long double));
+        memset(inlet, 0, nN * sizeof(long double));
         for(i = 0; i < nN0; ++i) inlet[srcList[i].node] = srcList[i].bc;
         for(tmp = 0, i = 0; i < nN; ++i)    // one node eq is dependent,
             if(i != srcList[nN0 - 1].node){ // exclude one arbitrary src node
@@ -124,8 +130,8 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // for(i = 0; i < nNeq; ++i){
     //     printf("Node eq %d:", i);
     //     for(j = 0; j < nE; ++j)
-    //         printf(" %.2lf", incNode[i*nE+j]);
-    //     printf(", c = %.2lf\n", conNode[i]);
+    //         printf(" %.2Lf", incNode[i*nE+j]);
+    //     printf(", c = %.2Lf\n", conNode[i]);
     // }
 
     // use BFS and get spanning tree (for finding independent loops)
@@ -144,7 +150,8 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     memset(visitedE, 0, nE * sizeof(bool));
     parent[root] = -1, depth[root] = 0, visited[root] = true, buffer.push(root);
     while(!buffer.empty()){
-        i = buffer.front(), buffer.pop();
+        i = buffer.front(), buffer.pop(); // BFS
+        // i = buffer.top(), buffer.pop(); // DFS
         for(j = 0; j < nN; ++j)
             if(adj[(ii = i*nN+j)].dir != 0 && !visited[j]){
                 parent[j] = i, depth[j] = depth[i] + 1, visited[j] = true, buffer.push(j);
@@ -164,10 +171,10 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
         printf("%d edges are not in BFS spanning tree (nLeq - %d = %d)\n", tmp, nN0-1, nLeq-nN0+1);
 
     // construct incidence and constants matrix for loop eq
-    incLoop = (double*) malloc(nLeq * nE * sizeof(double));
-    conLoop = (double*) malloc(nLeq * sizeof(double));
-    memset(incLoop, 0, nLeq * nE * sizeof(double));
-    memset(conLoop, 0, nLeq * sizeof(double));
+    incLoop = (long double*) malloc(nLeq * nE * sizeof(long double));
+    conLoop = (long double*) malloc(nLeq * sizeof(long double));
+    memset(incLoop, 0, nLeq * nE * sizeof(long double));
+    memset(conLoop, 0, nLeq * sizeof(long double));
     for(tmp = 0, i = 0; i < nE; ++i)
         if(!visitedE[i]){ // start from non-visited edge
             for(ii = edgeList[i].a , jj = edgeList[i].b; ii != jj; ) // find lowest common ancient
@@ -216,19 +223,19 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // for(i = 0; i < nLeq; ++i){
     //     printf("Loop eq %d:", i);
     //     for(j = 0; j < nE; ++j)
-    //         printf(" %.2lf", incLoop[i*nE+j]);
-    //     printf(", c = %.2lf\n", conLoop[i]);
+    //         printf(" %.2Lf", incLoop[i*nE+j]);
+    //     printf(", c = %.2Lf\n", conLoop[i]);
     // }
 }
 
 // A(x) + c = 0
 // R is vector, R = -F = -(A(x) + c)
-void computeR(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *x, double n, double *tmp, double *res){
+void computeR(int nE, int nLeq, int nNeq, long double *incLoop, long double *conLoop, long double *incNode, long double *conNode, long double *x, long double n, long double *tmp, long double *res){
     int i, j, offset = nLeq;
     // #pragma omp parallel for
     for(i = 0; i < nE; ++i) // tmp for store pow(x)
-        tmp[i] = pow(x[i], n); // why pow has error
-        // tmp[i] = x[i] * x[i];
+        tmp[i] = x[i] * x[i];
+        // tmp[i] = pow(x[i], n); // why pow has error
     for(i = 0; i < nLeq; ++i){
         res[i] = -conLoop[i];
         for(j = 0; j < nE; ++j)
@@ -241,35 +248,41 @@ void computeR(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, doub
     }
 }
 // J is matrix, J = Jacobian(F)
-void computeJ(int nE, int nLeq, int nNeq, double *incLoop, double *incNode, double *x, double n, double *tmp, double *res){
+void computeJ(int nE, int nLeq, int nNeq, long double *incLoop, long double *incNode, long double *x, long double n, long double *tmp, long double *res){
     int i, j, offset = nLeq * nE;
     // #pragma omp parallel for
     for(i = 0; i < nE; ++i)
-        tmp[i] = pow(x[i], n - 1.0); // why pow has error
-        // tmp[i] = x[i];
+        tmp[i] = x[i];
+        // tmp[i] = pow(x[i], n - 1.0); // why pow has error
     for(i = 0; i < nLeq; ++i)
         for(j = 0; j < nE; ++j)
             res[i*nE+j] = incLoop[i*nE+j] * n * tmp[i];
-    for(i = 0; i < nNeq; ++i)
-        for(j = 0; j < nE; ++j)
-            res[offset + i*nE+j] = incNode[i*nE+j];
+    memcpy(res+offset, incNode, nNeq * nE * sizeof(long double));
+    // for(i = 0; i < nNeq; ++i)
+    //     for(j = 0; j < nE; ++j)
+    //         res[offset + i*nE+j] = incNode[i*nE+j];
 }
-void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *&x, double n, int maxiter = 100000, int maxattempts = 10){
+void solve(int nE, int nLeq, int nNeq, long double *incLoop, long double *conLoop, long double *incNode, long double *conNode, long double *&x, long double n, int maxiter = 100000, int maxattempts = 1000){
     int i, j, k;
-    double *R, *J, *bufferx, *dx;
+    long double *R, *J, *bufferx, *dx;
+    srand(time(NULL));
     // allocate
-    R = (double*) malloc(nE * sizeof(double));
-    J = (double*) malloc((nLeq + nNeq) * nE * sizeof(double));
-    bufferx = (double*) malloc(nE * sizeof(double));
-    dx = (double*) malloc(nE * sizeof(double));
-    x = (double*) malloc(nE * sizeof(double));
+    R = (long double*) malloc(nE * sizeof(long double));
+    J = (long double*) malloc((nLeq + nNeq) * nE * sizeof(long double));
+    bufferx = (long double*) malloc(nE * sizeof(long double));
+    dx = (long double*) malloc(nE * sizeof(long double));
+    x = (long double*) malloc(nE * sizeof(long double));
+
     // solve by newton's method
-    for(i = 0; i < 100; ++i){ // has multiple attempts
+    for(i = 0; i < maxattempts; ++i){ // has multiple attempts
         printf("Attempt %d\n", i + 1);
         // randx(nE, x, 20.0, -10.0);
         // randx(nE, x, 2.0, -1.0);
+        // randx(nE, x, 0.2, -0.1);
         // randx(nE, x, 10.0);
-        randx(nE, x, 9.0, 1.0);
+        // randx(nE, x, 100.0, -50.0);
+        // randx(nE, x, 0.02, 0.99);
+        randx(nE, x, 0.5, 0.1);
         for(j = 0; j < maxiter; ++j){
             // get residual and jacobian
             computeR(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n, bufferx, R);
@@ -281,17 +294,19 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
             // xplusy(nE, x, dx, x);
             // xplussy(nE, x, 0.5, dx, x); // half step size
             xplussy(nE, x, 0.1, dx, x); // 0.1 step size
-            // TODO: adjust step size based on residual?
             // check
             if((k = allzero(nE, R, 1e-2)) > 0) break;
+            if(allzero(nE, R, 1e4) == 0){ k = 3; break; } // too large
             // debug
-            printA("J = \n", nE, J);
-            printx("R = ", nE, R);
-            printx("dx = ", nE, dx);
-            printx("x = ", nE, x);
-            getchar();
+            // printA("J = \n", nE, J);
+            // printx("R = ", nE, R);
+            // printx("dx = ", nE, dx);
+            // printx("x = ", nE, x);
+            // getchar();
         }
-        if(j == maxiter)
+        printx("R = ", nE, R);
+        printx("x = ", nE, x);
+        if(j == maxiter || k == 3)
             puts("Caonnot converge");
         else if(k == 2)
             puts("Detect NaN");

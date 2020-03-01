@@ -5,13 +5,11 @@
 #include <math.h>
 #include <omp.h>
 
-#define ABS(x) ((x))
-
 // x, y, z: vector; A, B: matrix; s: scalar
-inline double swap(double &a, double &b){
-    double tmp = a; a = b; b = tmp;
+inline long double swap(long double &a, long double &b){
+    long double tmp = a; a = b; b = tmp;
 }
-int allzero(int n, double *x, double tol = 1e-12){
+inline int allzero(int n, long double *x, long double tol = 1e-12){
     int i;
     for(i = 0; i < n; ++i)
         if(isnan(x[i]) || x[i] > tol || x[i] < -tol)
@@ -20,107 +18,115 @@ int allzero(int n, double *x, double tol = 1e-12){
     else if(isnan(x[i]))    return 2; // some are nan
     else                    return 0; // some are not within
 }
-inline void zerox(int n, double *x){
-    memset(x, 0, n * sizeof(double));
+inline void zerox(int n, long double *x){
+    memset(x, 0, n * sizeof(long double));
 }
-inline void randx(int n, double *x, double a = 1.0, double b = 0.0){
+inline void randx(int n, long double *x, long double a = 1.0, long double b = 0.0){
     for(int i = 0; i < n; ++i)
-        x[i] = (double) rand() / RAND_MAX * a + b;
+        x[i] = (long double) rand() / RAND_MAX * a + b;
 }
-inline void randA(int n, double *A, double a = 1.0, double b = 0.0){
+inline void randA(int n, long double *A, long double a = 1.0, long double b = 0.0){
     for(int i = 0; i < n; ++i)
         for(int j = 0; j < n; ++j)
-            A[i*n+j] = (double) rand() / RAND_MAX * a + b;
+            A[i*n+j] = (long double) rand() / RAND_MAX * a + b;
 }
-inline double xTy(int n, double *x, double *y){
-    double res = 0.;
+inline long double sx(int n, long double s, long double *x, long double *res){
+    for(int i = 0; i < n; ++i)
+        res[i] = s * x[i];
+}
+inline long double xTy(int n, long double *x, long double *y){
+    long double res = 0.;
     for(int i = 0; i < n; ++i)
         res += x[i] * y[i];
     return res;
 }
-inline void Ax(int n, double *A, double *x, double *res){
-    memset(res, 0, n * sizeof(double));
+inline void Ax(int n, long double *A, long double *x, long double *res){
+    memset(res, 0, n * sizeof(long double));
     for(int i = 0; i < n; ++i)
         for(int j = 0; j < n; ++j)
             res[i] += A[i*n+j] * x[j];
 }
-inline void xplusy(int n, double *x, double *y, double *res){
+inline void xplusy(int n, long double *x, long double *y, long double *res){
     // #pragma omp parallel for
     for(int i = 0; i < n; ++i)
         res[i] = x[i] + y[i];
 }
-inline void xminusy(int n, double *x, double *y, double *res){
+inline void xminusy(int n, long double *x, long double *y, long double *res){
     // #pragma omp parallel for
     for(int i = 0; i < n; ++i)
         res[i] = x[i] - y[i];
 }
-inline void xplussy(int n, double *x, double s, double *y, double *res){
-    // #pragma omp parallel for
+inline void xplussy(int n, long double *x, long double s, long double *y, long double *res){
     for(int i = 0; i < n; ++i)
         res[i] = x[i] + s * y[i];
 }
-inline void xminussy(int n, double *x, double s, double *y, double *res){
+inline void axplusby(int n, long double a, long double *x, long double b, long double *y, long double *res){
+    // #pragma omp parallel for
+    for(int i = 0; i < n; ++i)
+        res[i] = a * x[i] + b * y[i];
+}
+inline void xminussy(int n, long double *x, long double s, long double *y, long double *res){
     // #pragma omp parallel for
     for(int i = 0; i < n; ++i)
         res[i] = x[i] - s * y[i];
 }
-inline void xminusAy(int n, double *x, double *A, double *y, double *res){
-    memcpy(res, x, n * sizeof(double));
+inline void xminusAy(int n, long double *x, long double *A, long double *y, long double *res){
+    memcpy(res, x, n * sizeof(long double));
     for(int i = 0; i < n; ++i)
         for(int j = 0; j < n; ++j)
             res[i] -= A[i*n+j] * y[j];
 }
-void printx(const char *prefix, int n, double *x){
+void printx(const char *prefix, int n, long double *x){
     printf("%s", prefix);
     for(int i = 0; i < n; ++i)
-        printf("%.3lf ", x[i]);
+        printf("%.3Lf ", x[i]);
     putchar('\n');
 }
-void printA(const char *prefix, int n, double *A){
+void printA(const char *prefix, int n, long double *A){
     printf("%s", prefix);
     for(int i = 0; i < n; ++i){
         for(int j = 0; j < n; ++j)
-            printf("%.3lf ", A[i*n+j]);
+            printf("%.3Lf ", A[i*n+j]);
         putchar('\n');
     }
 }
-void loadx(const char *filename, int &n, double *&x){
+void loadx(const char *filename, int &n, long double *&x){
     FILE *fp = fopen(filename, "w");
     if(fp == NULL){
         fprintf(stderr, "Failed to load %s\n", filename);
         return;
     }
     fscanf(fp, "%d", &n);
-    x = (double*) malloc(n * sizeof(double));
+    x = (long double*) malloc(n * sizeof(long double));
     for(int i = 0; i < n; ++i)
-        fscanf(fp, "%lf", &x[i]);
+        fscanf(fp, "%Lf", &x[i]);
     fclose(fp);
 }
-void loadA(const char *filename, int &n, double *&A){
+void loadA(const char *filename, int &n, long double *&A){
     FILE *fp = fopen(filename, "w");
     if(fp == NULL){
         fprintf(stderr, "Failed to load %s\n", filename);
         return;
     }
     fscanf(fp, "%d", &n);
-    A = (double*) malloc(n * n * sizeof(double));
+    A = (long double*) malloc(n * n * sizeof(long double));
     for(int n2 = n * n, i = 0; i < n2; ++i)
-        fscanf(fp, "%lf", &A[i]);
+        fscanf(fp, "%Lf", &A[i]);
     fclose(fp);
 }
-void exportx(const char *filename, int n, double *x){
+void exportx(const char *filename, int n, long double *x){
     FILE *fp = fopen(filename, "w");
     fprintf(fp, "%d\n\n", n);
     for(int i = 0; i < n; ++i)
-        fprintf(fp, "%lf\n", x[i]);
+        fprintf(fp, "%Lf\n", x[i]);
     fclose(fp);
 }
-void exportA(const char *filename, int n, double *A){
+void exportA(const char *filename, int n, long double *A){
     FILE *fp = fopen(filename, "w");
     fprintf(fp, "%d\n\n", n);
     for(int i = 0; i < n; ++i){
         for(int j = 0; j < n; ++j)
-            fprintf(fp, "%lf ", A[i*n+j]);
+            fprintf(fp, "%Lf ", A[i*n+j]);
         fputc('\n', fp);
     }
     fclose(fp);
@@ -128,27 +134,27 @@ void exportA(const char *filename, int n, double *A){
 
 // Noets: for large matrix, avoid using small tol
 //        Otherwise, it would be hard to converge
-void bicgstab(int n, double *A, double *b, double *x, bool precond = false, double tol = 1e-6, int maxiter = 10000, int maxattempt = 1000){
+void bicgstab(int n, long double *A, long double *b, long double *x, bool precond = false, long double tol = 1e-6, int maxiter = 10000, int maxattempt = 1000){
     int i, j, k, pr, pc, pi, ii, jj;
-    double *A0, *b0, *r0, *r, *p, *v, *s, *t, *tmp;
-    double gmax, dtmp, rhoi, rhoj, alpha, beta, omega; // j = i + 1
+    long double *A0, *b0, *r0, *r, *p, *v, *s, *t, *tmp;
+    long double gmax, dtmp, rhoi, rhoj, alpha, beta, omega; // j = i + 1
     // adjust parameters
     if(10 * n > maxiter)     maxiter = 10 * n;
     if(100 * n > maxattempt) maxattempt = 100 * n;
     // allocate memory
-    A0 = precond? (double*)malloc(n * n * sizeof(double)) : A;
-    b0 = precond? (double*)malloc(n * sizeof(double)) : b;
-    r0 = (double*) malloc(n * sizeof(double));
-    r = (double*) malloc(n * sizeof(double));
-    p = (double*) malloc(n * sizeof(double));
-    v = (double*) malloc(n * sizeof(double));
-    s = (double*) malloc(n * sizeof(double));
-    t = (double*) malloc(n * sizeof(double));
-    tmp = (double*) malloc(n * sizeof(double));
+    A0 = precond? (long double*)malloc(n * n * sizeof(long double)) : A;
+    b0 = precond? (long double*)malloc(n * sizeof(long double)) : b;
+    r0 = (long double*) malloc(n * sizeof(long double));
+    r = (long double*) malloc(n * sizeof(long double));
+    p = (long double*) malloc(n * sizeof(long double));
+    v = (long double*) malloc(n * sizeof(long double));
+    s = (long double*) malloc(n * sizeof(long double));
+    t = (long double*) malloc(n * sizeof(long double));
+    tmp = (long double*) malloc(n * sizeof(long double));
     // preconditioning
     if(precond){
-        memcpy(A0, A, n * n * sizeof(double));
-        memcpy(b0, b, n * sizeof(double));
+        memcpy(A0, A, n * n * sizeof(long double));
+        memcpy(b0, b, n * sizeof(long double));
         for(pr = pc = 0; pr < n && pc < n; ){
             // find max abs
             pi = pr;
@@ -191,7 +197,7 @@ void bicgstab(int n, double *A, double *b, double *x, bool precond = false, doub
         else if(i * 3 < maxattempt * 2)  randx(n, x, 200.0, -100.0);
         else                             randx(n, x, 0.02, -0.01);
         xminusAy(n, b0, A0, x, r);
-        memcpy(r0, r, n * sizeof(double));
+        memcpy(r0, r, n * sizeof(long double));
         // dtmp = 0.1 * sqrt(xTy(n, r, r));
         // randx(n, tmp, dtmp, -0.5 * dtmp);
         // xplusy(n, r, tmp, r0);
@@ -241,17 +247,17 @@ void bicgstab(int n, double *A, double *b, double *x, bool precond = false, doub
     free(r0); free(r); free(p); free(v); free(s); free(t); free(tmp);
 }
 
-void gaussian(int n, double *A, double *b, double *x){
-    double *G;
+void gaussian(int n, long double *A, long double *b, long double *x){
+    long double *G;
     int pr, pc, pi; // pivot row, pivot column, pivot index
     int i, j, ii, jj;
-    double gmax, tmp;
+    long double gmax, tmp;
 
     // allocate
-    G = (double*) malloc(n * n * sizeof(double));
+    G = (long double*) malloc(n * n * sizeof(long double));
     // init
-    memcpy(G, A, n * n * sizeof(double));
-    memcpy(x, b, n * sizeof(double)); // x as temporary b
+    memcpy(G, A, n * n * sizeof(long double));
+    memcpy(x, b, n * sizeof(long double)); // x as temporary b
     // To row encholon form
     for(pr = pc = 0; pr < n && pc < n; ++pc){
         // find max abs
@@ -304,17 +310,17 @@ void gaussian(int n, double *A, double *b, double *x){
     free(G);
 }
 
-void gaussian2(int n, double *A, double *b, double *x, double *bufferx){
-    double *G;
+void gaussian2(int n, long double *A, long double *b, long double *x, long double *bufferx){
+    long double *G;
     int pr, pc, pi; // pivot row, pivot column, pivot index
     int i, j, ii, jj;
-    double gmax, tmp;
+    long double gmax, tmp;
 
     // allocate
-    G = (double*) malloc(n * n * sizeof(double));
+    G = (long double*) malloc(n * n * sizeof(long double));
     // init
-    memcpy(G, A, n * n * sizeof(double));
-    memcpy(x, b, n * sizeof(double)); // x as temporary b
+    memcpy(G, A, n * n * sizeof(long double));
+    memcpy(x, b, n * sizeof(long double)); // x as temporary b
     // To row encholon form
     for(pr = pc = 0; pr < n && pc < n; ++pc){
         // find max abs
@@ -327,9 +333,9 @@ void gaussian2(int n, double *A, double *b, double *x, double *bufferx){
             G[pr*n+pc] = NAN;  // for convenience later
         else{
             if(pi != pr){ // swap row
-                memcpy(bufferx, G+pr*n, n * sizeof(double));
-                memcpy(G+pr*n, G+pi*n, n * sizeof(double));
-                memcpy(G+pi*n, bufferx, n * sizeof(double));
+                memcpy(bufferx, G+pr*n, n * sizeof(long double));
+                memcpy(G+pr*n, G+pi*n, n * sizeof(long double));
+                memcpy(G+pi*n, bufferx, n * sizeof(long double));
                 swap(x[pr], x[pi]);
             }
             for(i = pr + 1; i < n; ++i){ // elliminate
