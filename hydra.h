@@ -1,5 +1,3 @@
-// TODO: merge computeJ and computeR, and then optimze it
-
 #ifndef __HYDRA_H__
 #define __HYDRA_H__
 

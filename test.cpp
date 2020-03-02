@@ -1,3 +1,7 @@
+// TODO: merge computeJ and computeR, and then optimze it
+// TODO: update readme
+// TODO: add python code for visualization and validation
+
 #include "hydra.h"
 
 int main(int argc, char *argv[]){
