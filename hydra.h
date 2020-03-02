@@ -30,7 +30,7 @@ void loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
     fp = fopen(filename, "r");
     // load parameters
     if(fp == NULL){ fprintf(stderr, "Failed to load data\n"); return; }
-    fscanf(fp, "%d %d %d %d %Lf", &nN, &nE, &nN0, &bcType, &n);
+    fscanf(fp, "%d %d %d %d %lf", &nN, &nE, &nN0, &bcType, &n);
     if(nN <= 0 || nE <= 0 || nN <= 1 ||
         (bcType != 0 && bcType != 1) ||
         (n < 1.5 || n > 2.1)){
@@ -42,9 +42,9 @@ void loadData(const char *filename, Edge *&edgeList, Source *&srcList, int &bcTy
     srcList = (Source*) malloc(nN0 * sizeof(Source));
     // load pipe data
     for(i = 0; i < nE; ++i)
-        fscanf(fp, "%d %d %Lf", &edgeList[i].a, &edgeList[i].b, &edgeList[i].r);
+        fscanf(fp, "%d %d %lf", &edgeList[i].a, &edgeList[i].b, &edgeList[i].r);
     for(i = 0; i < nN0; ++i)
-        fscanf(fp, "%d %Lf", &srcList[i].node, &srcList[i].bc);
+        fscanf(fp, "%d %lf", &srcList[i].node, &srcList[i].bc);
     fclose(fp);
     // retrieve other dimensions
     nL = nE - nN + 1;
@@ -128,8 +128,8 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // for(i = 0; i < nNeq; ++i){
     //     printf("Node eq %d:", i);
     //     for(j = 0; j < nE; ++j)
-    //         printf(" %.2Lf", incNode[i*nE+j]);
-    //     printf(", c = %.2Lf\n", conNode[i]);
+    //         printf(" %.2lf", incNode[i*nE+j]);
+    //     printf(", c = %.2lf\n", conNode[i]);
     // }
 
     // use BFS and get spanning tree (for finding independent loops)
@@ -221,8 +221,8 @@ void getEquations(Edge *edgeList, Source *srcList, int bcType, double n, int nN,
     // for(i = 0; i < nLeq; ++i){
     //     printf("Loop eq %d:", i);
     //     for(j = 0; j < nE; ++j)
-    //         printf(" %.2Lf", incLoop[i*nE+j]);
-    //     printf(", c = %.2Lf\n", conLoop[i]);
+    //         printf(" %.2lf", incLoop[i*nE+j]);
+    //     printf(", c = %.2lf\n", conLoop[i]);
     // }
 }
 
@@ -276,7 +276,7 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
             computeJ(nE, nLeq, nNeq, incLoop, incNode, x, n, bufferx, J);
             // get dx and update
             gaussian(nE, J, R, dx);
-            bicg(nE, J, R, dx);
+            // bicg(nE, J, R, dx);
             // x_minus_sy(nE, x, dx, x);
             // x_minus_sy(nE, x, 0.1, dx, x); // 0.1 step size
             x_minus_sy(nE, x, 0.01, dx, x); // for network5
