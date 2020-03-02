@@ -1,19 +1,5 @@
-// Large network still cannot converge
-
-/* Result of test.exe is different from result of test.py
-
-For network 1
-test.py: [3.41056838  6.58943162 -3.83917625  7.24974463  2.75025537]
-test.exe: [3.33333333 6.66666667 -3.33333333 6.66666667 3.33333333]
-
->>> 5*3.41056838**2 - 6.58943162**2 - 3.83917625**2
-2.00592378263309e-08
->>> 5*3.33333333**2 - 6.66666667**2 - 3.33333333**2
--1.3333332837817125e-07
->>> 5*(10/3)**2 - (20/3)**2 - (10/3)**2
-1.7763568394002505e-15
-
-*/
+// TODO: add bicg also
+// TODO: check and optimize
 
 #include "solver2.h"
 #include <queue>
@@ -244,8 +230,8 @@ void computeR(int nE, int nLeq, int nNeq, long double *incLoop, long double *con
     int i, j, offset = nLeq;
     // #pragma omp parallel for
     for(i = 0; i < nE; ++i) // tmp for store pow(x)
-        tmp[i] = x[i] * fabs(x[i]); // n == 2
-        // tmp[i] = x[i] > 0? pow(fabs(x[i]), n) : -pow(fabs(x[i]), n);
+        tmp[i] = x[i] * pow(fabs(x[i]), n-1.0);
+        // tmp[i] = x[i] * fabs(x[i]); // n == 2
     for(i = 0; i < nLeq; ++i){
         res[i] = conLoop[i];
         for(j = 0; j < nE; ++j)
@@ -262,15 +248,12 @@ void computeJ(int nE, int nLeq, int nNeq, long double *incLoop, long double *inc
     int i, j, offset = nLeq * nE;
     // #pragma omp parallel for
     for(i = 0; i < nE; ++i)
-        tmp[i] = x[i]; // n == 2
-        // tmp[i] = x[i] > 0? pow(fabs(x[i]), n-1.0) : -pow(fabs(x[i]), n-1.0);
+        tmp[i] = (n-1.0)*pow(fabs(x[i]), n-3.0) + pow(fabs(x[i]), n-1.0);
+        // tmp[i] = fabs(x[i]); // n == 2
     for(i = 0; i < nLeq; ++i)
         for(j = 0; j < nE; ++j)
-            res[i*nE+j] = incLoop[i*nE+j] * n * tmp[i];
+            res[i*nE+j] = incLoop[i*nE+j] * tmp[i];
     memcpy(res+offset, incNode, nNeq * nE * sizeof(long double));
-    // for(i = 0; i < nNeq; ++i)
-    //     for(j = 0; j < nE; ++j)
-    //         res[offset + i*nE+j] = incNode[i*nE+j];
 }
 void solve(int nE, int nLeq, int nNeq, long double *incLoop, long double *conLoop, long double *incNode, long double *conNode, long double *&x, long double n, int maxiter = 100000, int maxattempts = 1000){
     int i, j, k;
@@ -302,8 +285,8 @@ void solve(int nE, int nLeq, int nNeq, long double *incLoop, long double *conLoo
             // gaussian(nE, J, R, dx);
             gaussian2(nE, J, R, dx, bufferx);
             // xminussy(nE, x, dx, x);
-            // xminussy(nE, x, 0.5, dx, x); // half step size
-            xminussy(nE, x, 0.01, dx, x); // 0.01 step size
+            // xminussy(nE, x, 0.1, dx, x); // 0.01 step size
+            xminussy(nE, x, 0.01, dx, x); // 0.01 step size (for network5)
             // check
             if((k = allzero(nE, R, 1e-6)) > 0) break;
             if(allzero(nE, R, 1e8) == 0){ k = 3; break; } // too large
