@@ -1,9 +1,17 @@
 # hydra
-Pipe network analysis of hydraulics network through both sequential and parallel algorithms.
+Hydraulics pipe network analysis through both sequential and parallel algorithms.
+
+## Method
+
+1. [Wiki](https://en.wikipedia.org/wiki/Pipe_network_analysis)
+2. Kirchof eqs (node equation (mass conservation), loop equation (head loss change of a loop is zero))
+3. Head loss by Hazen-Williams equation or Darcy-Weisbach equation
+
+
 
 ## Good resource
 
-* https://en.wikipedia.org/wiki/Pipe_network_analysis
+* 
 * https://www.researchgate.net/publication/321294545_Independent_Loops_Selection_in_a_Hydraulic_Looped_Network
 
 ## TODOs

@@ -1,12 +1,17 @@
-CUDA_INC_DIR = /usr/local/cuda/include
+# CUDA_INC_DIR = /usr/local/cuda/include # cvaa knows the path
 CUDA_LIB_DIR = /usr/local/cuda/lib64
-CUDA_LIBS = -lcudart -lcusparse -lcusolver
+CUDA_LIBS = -lcuda -lcudart -lcusparse -lcusolver
 
-CPU: # cpu version
-# g++ compile all
+all: MAIN
 
-GPU: # cuda version
-# nvcc compile cuda files first
-# g++ compile main function and link all
+MAIN: CPU_CORE GPU_CORE
+	g++ main.o cuda_main.o -L$(CUDA_LIB_DIR) $(CUDA_LIBS) -O3 -o test.exe
+
+CPU_CORE:
+	g++ -O3 -c main.c
+
+GPU_CORE:
+	nvcc -O3 -c cuda_main.cu
 
 clean:
+	rm *.o
