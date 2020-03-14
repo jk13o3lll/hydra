@@ -31,7 +31,7 @@ void bicg(int n, double *A, double *x, double *b,
 // gaussian ellimination (LU with partial pivoting)
 void gaussian(int n, double *A, double *x, double *b);
 
-// void load_network();
+void load_data(); // load network
 // void get_equations();
 
 // use only 1/10 original step
