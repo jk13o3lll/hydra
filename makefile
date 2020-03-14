@@ -1,5 +1,6 @@
+CUDA_INC_DIR = /usr/local/cuda/include # nvcc knows the path
 CUDA_LIB_DIR = /usr/local/cuda/lib64
-CUDA_LIBS = -lcuda -lcudart # -lcusparse -lcusolver
+CUDA_LIBS = -lcuda -lcudart -lcurand # -lcusparse -lcusolver
 
 # make CPU version
 cpu:
