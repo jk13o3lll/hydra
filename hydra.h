@@ -70,8 +70,7 @@ bool gaussian(int n, double *A, double *x, double *b);
 // nL: num of loops (indepent loop, haven't include loop for source (bcType==1))
 // nNeq: num of node equations
 // nLeq: num of loop equations
-void load_data(const char *filename, Edge *&edgeList, Source *&srcList, int &bcType,
-    double &n, int &nN, int &nN0, int &nE, int &nL, int &nNeq, int &nLeq);
+void load_data(const char *filename, Edge *&edgeList, Source *&srcList, int &bcType, double &n, int &nN, int &nN0, int &nE, int &nL, int &nNeq, int &nLeq);
 // Get incidence matrix (value is +-r value) and coefficients (value is from bc) of node equations and loop equations
 // incidence matrix and coefficient vectors of node and loop equations (coefficient at the same side with unknowns)
 void get_equations(Edge *edgeList, Source *srcList, int bcType, double n, int nN, int nN0, int nE, int nL, int nNeq, int nLeq, double *&incNode, double *&conNode, double *&incLoop, double *&conLoop);
@@ -83,9 +82,10 @@ void compute_R_and_J(int nE, int nLeq, int nNeq, double *incLoop, double *conLoo
 void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *&x, double n, int maxiter = 100000, int maxattempts = 1000, double tol = 1e-6, double step = 0.1);
 
 
-
-// #ifdef USE_CUDA
-
-// #endif // USE_CUDA
+#ifdef HYDRA_USE_CUDA
+#include "hydra_cuda.h"
+// wrapper for cuda
+void solve_cuda(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *&x, double n, int maxiter = 100000, int maxattempts = 1000, double tol = 1e-6, double step = 0.1);
+#endif // USE_CUDA
 
 #endif

@@ -206,8 +206,7 @@ bool gaussian(int n, double *A, double *x, double *b){
     return ret;
 }
 
-void load_data(const char *filename, Edge *&edgeList, Source *&srcList, int &bcType,
-    double &n, int &nN, int &nN0, int &nE, int &nL, int &nNeq, int &nLeq){
+void load_data(const char *filename, Edge *&edgeList, Source *&srcList, int &bcType, double &n, int &nN, int &nN0, int &nE, int &nL, int &nNeq, int &nLeq){
     FILE *fp;
     int i, j, k;
     int a, b;
@@ -488,3 +487,11 @@ void solve(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double 
     free(xtmp); // why this has bug
     free(dx);
 }
+
+
+#ifdef USE_CUDA
+// wrapper for cuda
+void solve_cuda(int nE, int nLeq, int nNeq, double *incLoop, double *conLoop, double *incNode, double *conNode, double *&x, double n, int maxiter = 100000, int maxattempts = 1000, double tol = 1e-6, double step = 0.1){
+    solve(nE, nLeq, nNeq, incLoop, conLoop, incNode, conNode, x, n, maxiter, maxattempts, tol, step);
+}
+#endif // USE_CUDA
