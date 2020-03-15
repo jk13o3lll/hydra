@@ -1,34 +1,136 @@
 # hydra
-Pipe network analysis of hydraulics network through both sequential and parallel algorithms.
+Pipe network analysis of hydraulics network.
 
-## Good resource
+According to given property of pipes and boundary conditions, *hydra* can solve the flowrate (steady state) on each pipe in a hydraulic network.
 
-* https://en.wikipedia.org/wiki/Pipe_network_analysis
-* https://www.researchgate.net/publication/321294545_Independent_Loops_Selection_in_a_Hydraulic_Looped_Network
+Currently, only CPU version is provided, but it is already capable to solve even a large scale network.
 
-## TODOs
+![Example: Network 4](./media/network4.svg) <img src="./media/network4.svg">
 
-### I. Build sequential version
+## How to use this?
 
-1. Modify network
-    * For multiple source node, add one additional node and construct fictious loops by connecting source nodes together to the new node.
-    * Merge internal loop between two nodes. (more than 2 pipe between node)
-        * dP = r1 Q1^n = r2 Q2^n = r_1,2 (Q1+Q2)^n => r_1,2 = 1 / (sum((1/ri)^(1/n)))^n
-    * Merge pipe with one flow (degree of node = 2)
-        * dP = r1 Q^n + r2 Q^n = r_1,2 Q^n => r_1,2 = sum(ri)
-1. Build [spanning tree](https://en.wikipedia.org/wiki/Spanning_tree) by [BFS](https://en.wikipedia.org/wiki/Parallel_breadth-first_search) and obtain discarded edges.
-    * root of BFS start from node has highest degree (most edges connect to) (this is efficient way to decrease total depth or diameter) (or [BFS for every](https://codeforces.com/blog/entry/7372)(can parallel) or [other1](https://www.sciencedirect.com/science/article/pii/0020025595001352) or [other2](https://www.researchgate.net/publication/220617691_Minimum_Diameter_Spanning_Trees_and_Related_Problems))
-1. Put every edge back to the spannnig tree alternatively, and then find the loop by starting from two vertices on the edge and tracing back to their parents until their [lowest common ancestor](https://en.wikipedia.org/wiki/Lowest_common_ancestor).
-    * From the discarded edges, every edge that is put back will form an indepedent loop because every loop contain at least one unique edge (discarded edge).
-1. Construct matrix by buondary conditions (soruce node), node equations (mass conservation) and loop equations (energy conservation).
-1. Use [Newton–Raphson method](https://en.wikipedia.org/wiki/Newton%27s_method) to solve the unknown.
-    * Use BiCG or [BiCGSTAB](https://en.wikipedia.org/wiki/Biconjugate_gradient_stabilized_method) to solve the matrix inverse (gradient).
+* Linux
+  ```
+  make cpu
+  ./test_cpu.exe ./data/network1.dat
+  ```
 
-### II. Build parallel versoin
+* Windows (MinGW-win64)
+  ```
+  mingw32-make
+  ./test_cpu.exe ./data/network1.dat
+  ```
 
-After validating sequential version, write a CUDA version.
+## Todos
 
-### Notes
+* Use cuSolverSP to solve for large scale network.
+(As we test, bicg is difficult to converge in large scale case, though it is suitable to be parallelized.)
 
-1. If using flowrate as boundary condition, both input and output flow should be provide (one output will be depedent, so one node equation contain one output should be removed) (pressure and radius are decided implicitly) In the end you will get N-1 node eq & E-(N-1) loop eq (1 is sum in = sum out). (no node at the end of source)
-2. If using pressure as boundary condition, every additional inputs and outputs should add one edge, which means we need (N0-1=inputs+outputs-1) indepedent loop equations (just select one input and go through the path contain other inputs and outpus.). In the end you will get (N-N0) node eq (no node eq at source) + L loop eq + (N0-1) source loop eq. (E = (N-N0) + L + (N0-1))
+## How does *hydra* work?
+
+### Kirshoff's first law (Law of conservation, node equations)
+
+Based on conservation of flow rate, summation of flow rate on a node should be zero.
+Thus, we can obtain node equations for every node (if boundary condition is pressure, then source nodes are excluded.).
+
+![Node eq](./media/node_eq.svg) <img src="./media/node_eq.svg">
+
+### Kirshoff's second law (loop equations)
+
+To satisfy Kirshoff's second law, total presure drop (head loss) of any loop should be zero.
+Thus, we can obtain loop equations for every loop (we only include independent loops to solve unknowns.).
+
+![Loop eq](./media/loop_eq.svg) <img src="./media/loop_eq.svg">
+
+### Head loss in pipe
+
+The pressure drop of a pipe can be calculated according to 
+
+* Darcy–Weisbach equation
+
+![Darcy Weisbach](./media/darcy_weisbach.svg) <img src="./media/darcy_weisbach.svg">
+
+or
+
+* More general form 
+
+![head loss](./media/head_loss.svg) <img src="./media/head_loss.svg">
+
+(r is combination of the coefficients, n is usually between 1.5 to 2)
+
+(p.s. n = 1 => Hagen-Poiseuille Equation; n = 1.85 => Hazen-Williams equation; n = 2.0 => Darcy-Weisbach equation)
+
+### Independent loops searching
+
+1. Construct BFS spanning tree
+1. For every pipe that is not included in the spanning tree, use the two endpoints of that pipe as starting point and end point.
+1. Then find lowest common ancestor of the starting point and end point, the travelled path is the loop we want to find. (connect the endpoints also)
+
+### Use Newton's method to solve system of non-linear equations
+
+We have to solve system of non-linear equations.
+
+![nonlinear](./media/nonlinear.svg) <img src="./media/nonlinear.svg">
+
+We use incidence matrix to store coefficients (+r, -r, +1, -1) and a vector to store constants (bounary conditions) in node equations and loop equations.
+
+![newton](./media/newton.svg) <img src="./media/newton.svg">
+
+We compute residual matrix R and its jacobian J at every x.
+
+### Solver for updates in Newton's method
+
+We implement Gaussian ellimination (with partial pivoting) and Biconjugate gradient method to solve.
+
+For large scale network (number of pipe > 300), we thus suggest to use Gaussian ellimination.
+
+### Boundary condition
+
+We support two kind of boundary conditions:
+
+1. Flowrate at node
+  ```
+  nNeq = nN - 1
+  nLeq = nE - nNeq
+  (nN: #nodes, nE: #edges (unknows), nNeq: #node_eq, nLeq: #loop_eq)
+  ```
+  * One node equation should be excluded because it is dependent to the others.
+
+1. Pressure at node
+
+  ```
+  nNeq = nN - nN0
+  nLeq = nL + nN0 - 1
+  ```
+  * Additional (number of sources - 1) loops pass through different sources should be included.
+  * Node equation on source nodes should be excluded.
+
+### Special cases that can generate equivalent network
+
+Currently, we have support the function for converting following conditions into equivalent network,
+so you have to convert these conditions by yourself.
+
+1. parallel pipes between two nodes
+
+  We only support single pipe between two nodes.
+  But you still can convert it to equivalent structure and retrive the actual results based on it.
+  
+  ![parallel r](./media/parallel_r.svg) <img src="./media/parallel_r.svg">
+
+1. long serial pipes between two nodes
+
+  ![serial r](./media/serial_r.svg) <img src="./media/serial_r.svg">
+
+1. multiple sources on one node
+
+  Just sum them up.
+  
+1. multiple separated networks
+
+  Just put them into different network.dat.
+  
+## Example: network4.dat
+
+![result1 network4](./media/result1_network4.svg) <img src="./media/result1_network4.svg">
+![result2 network4](./media/result2_network4.svg) <img src="./media/result2_network4.svg">
+

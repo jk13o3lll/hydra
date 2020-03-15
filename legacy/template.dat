@@ -1,0 +1,11 @@
+nN nE nN0 bcType n
+
+a0 b0 r0
+a1 b1 r1
+...
+
+# Note1: should not have multiple source on one node
+# (it means contradition or you have to merge them)
+id0 x0
+id1 x1
+...
