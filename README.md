@@ -5,7 +5,7 @@ According to given property of pipes and boundary conditions, *hydra* can solve 
 
 Currently, only CPU version is provided, but it is already capable to solve even a large scale network.
 
-![Example: Network 4](./media/network4.svg) <img src="./media/network4.svg">
+![Example: Network 4](./media/network4.svg)<!-- <img src="./media/network4.svg">-->
 
 ## How to use this?
 
@@ -33,14 +33,14 @@ Currently, only CPU version is provided, but it is already capable to solve even
 Based on conservation of flow rate, summation of flow rate on a node should be zero.
 Thus, we can obtain node equations for every node (if boundary condition is pressure, then source nodes are excluded.).
 
-![Node eq](./media/node_eq.svg) <img src="./media/node_eq.svg">
+![Node eq](./media/node_eq.svg) <!--<img src="./media/node_eq.svg">-->
 
 ### Kirshoff's second law (loop equations)
 
 To satisfy Kirshoff's second law, total presure drop (head loss) of any loop should be zero.
 Thus, we can obtain loop equations for every loop (we only include independent loops to solve unknowns.).
 
-![Loop eq](./media/loop_eq.svg) <img src="./media/loop_eq.svg">
+![Loop eq](./media/loop_eq.svg) <!--<img src="./media/loop_eq.svg">-->
 
 ### Head loss in pipe
 
@@ -48,13 +48,13 @@ The pressure drop of a pipe can be calculated according to
 
 * Darcy–Weisbach equation
 
-![Darcy Weisbach](./media/darcy_weisbach.svg) <img src="./media/darcy_weisbach.svg">
+![Darcy Weisbach](./media/darcy_weisbach.svg) <!--<img src="./media/darcy_weisbach.svg">-->
 
 or
 
 * More general form 
 
-![head loss](./media/head_loss.svg) <img src="./media/head_loss.svg">
+![head loss](./media/head_loss.svg) <!--<img src="./media/head_loss.svg">-->
 
 (r is combination of the coefficients, n is usually between 1.5 to 2)
 
@@ -70,11 +70,11 @@ or
 
 We have to solve system of non-linear equations.
 
-![nonlinear](./media/nonlinear.svg) <img src="./media/nonlinear.svg">
+![nonlinear](./media/nonlinear.svg) <!--<img src="./media/nonlinear.svg">-->
 
 We use incidence matrix to store coefficients (+r, -r, +1, -1) and a vector to store constants (bounary conditions) in node equations and loop equations.
 
-![newton](./media/newton.svg) <img src="./media/newton.svg">
+![newton](./media/newton.svg)<!--<img src="./media/newton.svg">-->
 
 We compute residual matrix R and its jacobian J at every x.
 
@@ -115,11 +115,11 @@ so you have to convert these conditions by yourself.
   We only support single pipe between two nodes.
   But you still can convert it to equivalent structure and retrive the actual results based on it.
   
-  ![parallel r](./media/parallel_r.svg) <img src="./media/parallel_r.svg">
+  ![parallel r](./media/parallel_r.svg) <!--<img src="./media/parallel_r.svg">-->
 
 1. long serial pipes between two nodes
 
-  ![serial r](./media/serial_r.svg) <img src="./media/serial_r.svg">
+  ![serial r](./media/serial_r.svg) <!--<img src="./media/serial_r.svg">-->
 
 1. multiple sources on one node
 
@@ -131,6 +131,6 @@ so you have to convert these conditions by yourself.
   
 ## Example: network4.dat
 
-![result1 network4](./media/result1_network4.svg) <img src="./media/result1_network4.svg">
-![result2 network4](./media/result2_network4.svg) <img src="./media/result2_network4.svg">
+![result1 network4](./media/result1_network4.svg) <!--<img src="./media/result1_network4.svg">-->
+![result2 network4](./media/result2_network4.svg) <!--<img src="./media/result2_network4.svg">-->
 
