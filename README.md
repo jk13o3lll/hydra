@@ -48,17 +48,23 @@ The pressure drop of a pipe can be calculated according to
 
 * Darcy–Weisbach equation
 
-![Darcy Weisbach](./media/darcy_weisbach.svg) <!--<img src="./media/darcy_weisbach.svg">-->
+  ![Darcy Weisbach](./media/darcy_weisbach.svg) <!--<img src="./media/darcy_weisbach.svg">-->
 
 or
 
 * More general form 
 
-![head loss](./media/head_loss.svg) <!--<img src="./media/head_loss.svg">-->
+  ![head loss](./media/head_loss.svg) <!--<img src="./media/head_loss.svg">-->
 
-(r is combination of the coefficients, n is usually between 1.5 to 2)
+  (r is combination of the coefficients, n is usually between 1.5 to 2)
 
-(p.s. n = 1 => Hagen-Poiseuille Equation; n = 1.85 => Hazen-Williams equation; n = 2.0 => Darcy-Weisbach equation)
+  (p.s. n = 1 => Hagen-Poiseuille Equation; n = 1.85 => Hazen-Williams equation; n = 2.0 => Darcy-Weisbach equation)
+
+* Actual equation used
+
+  Becaues the sign of each term should correspond to the direction of flow, the head loss and its derivative become
+
+  ![actual equations](./media/actual_eq.svg) <!--<img src="./media/actual_eq.svg"-->
 
 ### Independent loops searching
 
