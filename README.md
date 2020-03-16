@@ -131,6 +131,6 @@ so you have to convert these conditions by yourself.
   
 ## Example: network4.dat
 
-![result1 network4](./media/result1_network4.svg) <!--<img src="./media/result1_network4.svg">-->
-![result2 network4](./media/result2_network4.svg) <!--<img src="./media/result2_network4.svg">-->
+![result1 network4](./media/result1_network4.png) <!--<img src="./media/result1_network4.png">-->
+![result2 network4](./media/result2_network4.png) <!--<img src="./media/result2_network4.png">-->
 
