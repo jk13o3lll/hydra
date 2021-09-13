@@ -3,7 +3,9 @@ Pipe network analysis of hydraulics network.
 
 According to given property of pipes and boundary conditions, *hydra* can solve the flowrate (steady state) on each pipe in a hydraulic network.
 
-Currently, only CPU version is provided, but it is already capable to solve even a large scale network.
+Currently, only CPU version has the function to obtain equations from graph automatically.
+
+The GPU version for the course project is in [cuda](/cuda) folder.
 
 ![Example: Network 4](./media/network4.svg)<!-- <img src="./media/network4.svg">-->
 
