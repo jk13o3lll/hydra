@@ -11,7 +11,7 @@ Hydraulics pipe network analysis through both sequential and parallel algorithms
 
 ## Good resource
 
-* 
+* https://en.wikipedia.org/wiki/Biconjugate_gradient_method
 * https://www.researchgate.net/publication/321294545_Independent_Loops_Selection_in_a_Hydraulic_Looped_Network
 
 ## TODOs
