@@ -65,20 +65,7 @@ __global__ void DotProduct(float *x, float *y, float *z, int n){ // z = xTy
         if(ii<stride) tmp[ii] += tmp[ii + stride];             // blockDim.x should be 2^n, otherwise some entry will miss
         __syncthreads();
     }
-    if(ii == 0) z[blockIdx.x] = tmp[0];
-    __syncthreads();
-    if(id == 0){
-        float sum = 0.0;
-        for(int i=0; i<gridDim.x; i+=2) sum += z[i];
-        z[0] = sum;
-    }
-    else if(id == 1){
-        float sum = 0.0;
-        for(int i=1; i<gridDim.x; i+=2) sum += z[i];
-        z[1] = sum;
-    }
-    __syncthreads();
-    if(id == 0) z[0] += z[1];
+    if(ii == 0) atomicAdd(&z[0], tmp[0]);
 }
 __global__ void MatrixVectorProduct(float *A, float *x, float *b, int n){ // Ax=b
 	int id = blockDim.x*blockIdx.x + threadIdx.x;

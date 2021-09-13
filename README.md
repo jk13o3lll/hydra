@@ -25,6 +25,8 @@ Currently, only CPU version is provided, but it is already capable to solve even
 
 * Use cuSolverSP to solve for large scale network.
 (As we test, bicg is difficult to converge in large scale case, though it is suitable to be parallelized.)
+* Use to +-1RMQ to solve LCA
+<!-- http://pisces.ck.tp.edu.tw/~peng/index.php?action=showfile&file=f7537af28d86211a044c1272bb486da856ac08862 -->
 
 ## How does *hydra* work?
 
